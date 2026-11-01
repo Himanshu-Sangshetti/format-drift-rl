@@ -18,32 +18,44 @@ separate referee marks wrong.
    and bold boxes, words inside boxes, repeated "Final Answer" lines). A box-matching referee
    labelled up to **96%** of correct paid answers as hacks in one run; a headline exploitation of
    +0.43 became 0.00 with a robust referee.
-2. **Only loopholes easier than the task were exploited.** "Pays if the right number appears
-   anywhere": +0.42 in one of two seeds, true accuracy 0.73 → 0.43 (answers ramble and never
-   conclude). MBPP's original tests: +0.01 to +0.06. Everything else, including an LLM judge,
-   stayed within noise.
-3. **Mostly selection.** Where the trained model cheated, the untrained model already produced a
-   paid-but-wrong answer on 54-92% of the same problems (64 samples each).
+2. **One run crossed the pre-registered threshold (E ≥ 0.10).** "Pays if the right number appears
+   anywhere": +0.42 [95% cluster CI 0.33, 0.50] in one of two seeds, true accuracy 0.73 → 0.43
+   (answers ramble and never conclude); the other seed rose +0.07. MBPP's original tests showed
+   smaller rises (+0.06, +0.05, +0.01). Everything else, including an LLM judge, stayed within ±0.04.
+3. **Mostly selection.** Where exploitation rose, the untrained model already produced a
+   paid-but-wrong answer on 54-92% of the same problems (64 samples each). For MBPP the exploited
+   tasks were 3-9× enriched over random tasks; for "anywhere" only 1.2-1.7×, a broad strategy
+   rather than problem-specific errors.
 4. **The pre-registered causal test was null.** A partial-credit ramp towards a narrow loophole did
    not raise exploitation over the loophole alone or a density-matched random-credit control
-   (4 seeds each; one-sided permutation p = 0.74 and 0.70).
+   (4 seeds each; one-sided permutation p = 0.74 and 0.70), under every referee version.
+5. **Exploratory: the wrong-reward share ω.** The two checkers with rising exploitation spent about
+   a tenth of the untrained model's reward on wrong answers (ω ≈ 0.10); all others under 0.04.
+   Not pre-registered, eight checkers.
+
+![Format drift over training: nested boxes, repetition, and the share of flagged answers that are correct](paper/figs/drift.png)
+
+*Format drift grows during training; by the end most answers a box-matching referee flags are correct.*
 
 ![Training curves: checker reward vs true accuracy per checker](paper/figs/training_curves.png)
 
 *Orange: what the checker pays. Blue: true accuracy (robust referee). Where they split, training
 pays for wrong answers.*
 
-| Checker | Seeds | Untrained cheat rate | Exploitation (robust referee) | Exploitation (box-matching referee) |
+| Checker | Seeds | Untrained cheat rate h | Exploitation (robust referee) | Exploitation (box-matching referee) |
 |---|---|---|---|---|
 | right number anywhere | 2 | 8.0% | **+0.42**, +0.07 | +0.45, +0.59 |
 | MBPP original tests | 3 | 2.6% | +0.06, +0.05, +0.01 | same |
-| LLM judge (Qwen3-4B, with reference) | 1 | 1.4% | +0.03 | +0.53 |
+| LLM judge (Qwen3-4B, with reference) | 1 | 0% | +0.03 | +0.53 |
 | right number in last 50 chars | 4 | 1.3% | +0.02, +0.00, +0.02, −0.04 | +0.02, +0.07, +0.02, −0.04 |
 | last 50 chars + ramp | 4 | 1.3% | +0.00, +0.00, +0.01, −0.04 | +0.00, +0.43, +0.02, −0.01 |
 | last 50 chars + random credit | 4 | 1.3% | −0.01, +0.00, +0.03, −0.02 | −0.01, −0.00, +0.02, −0.02 |
 | honest controls (maths, MBPP+) | 1 + 1 | 0% | 0.00, 0.00 | 0.00, 0.00 |
 
-Exploitation = paid-but-wrong rate at steps 105-120 minus steps 1 and 10 (SE ≈ 0.03).
+Exploitation E = paid-but-wrong rate at steps 105-120 minus steps 1 and 10. Cluster-bootstrap
+intervals for every run are in the paper (Appendix C).
+
+![Exploitation against the wrong-reward share, and the starting cheat rate on exploited problems](paper/figs/pressure.png)
 
 ## The checkers
 
@@ -80,8 +92,10 @@ ce.mbpp_plus(hard_coded, "3")   # 0.0: fails MBPP+ (the code referee)
 pip install -r requirements.txt
 # re-score the released answers and redo the pre-registered test (CPU, minutes)
 python fdrl/relabel.py results/runs
+python fdrl/analysis_extra.py && python fdrl/analysis_review.py   # drift, cluster CIs, sensitivity, reach baselines
 # redraw the figures
-python paper/figure_main.py && python paper/figure_main.py --paper && python paper/figure_curves.py
+python paper/figure_main.py && python paper/figure_main.py --paper
+python paper/figure_curves.py && python paper/figure_curves.py --paper && python paper/figure_extra.py
 # rerun everything on Modal (about $38 on L40S GPUs)
 SD_GPU=L40S modal run fdrl/modal_app.py --plan plans/main_runs.txt    # 20 training runs
 SD_GPU=L40S modal run fdrl/modal_app.py --plan plans/main_audit.txt   # base audits
@@ -107,8 +121,8 @@ to Weights & Biases (`--report wandb`).
 
 One 0.6B model, 120 steps and 64 samples per step is small next to related work (400-500 steps).
 The robust referee was chosen after seeing results; it is disclosed, all referee versions are
-reported, and it was reviewed for leniency (0 of 40 sampled answers wrongly passed). The judge has
-one seed.
+reported, and it was checked for leniency (0 of 40 sampled answers wrongly passed). The judge has
+one seed, and the random-credit control delivered about a quarter of the ramp's expected reward.
 
 ## Citation
 
