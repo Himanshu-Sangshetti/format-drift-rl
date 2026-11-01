@@ -18,6 +18,7 @@
 \definecolor{linkblue}{HTML}{1F4E8C}
 \usepackage[colorlinks=true,linkcolor=linkblue,citecolor=linkblue,urlcolor=linkblue]{hyperref}
 \usepackage[nameinlink,capitalise,noabbrev]{cleveref}
+\hypersetup{pdftitle={Format Drift Masquerades as Reward Hacking: A Pre-registered Study of When RL Exploits Flawed Checkers},pdfauthor={Himanshu Sangshetti}}
 
 \captionsetup{font=small,labelfont=bf,labelsep=period,skip=6pt}
 \setlist{itemsep=2pt,topsep=3pt,leftmargin=1.4em}
@@ -41,7 +42,7 @@
 \Large A Pre-registered Study of When RL Exploits Flawed Checkers}
 \author{Himanshu Sangshetti\\[2pt]
 \normalsize Independent researcher \quad\texttt{himanshusangshetti@gmail.com}}
-\date{November 2026 \quad·\quad Code and data: \url{https://github.com/Himanshu-Sangshetti/format-drift-rl}}
+\date{November 2026 \quad$\cdot$\quad Code and data: \url{https://github.com/Himanshu-Sangshetti/format-drift-rl}}
 
 \begin{document}
 \maketitle
@@ -122,7 +123,7 @@ the reward paid to wrong answers minus the reward withheld from right ones. The 
 \pbw_t \;=\; \frac{1}{|A_t|} \sum_{(x, a) \in A_t} \mathbf{1}\!\left[ r_c(x, a) > \tfrac12 \;\wedge\; g(x, a) = 0 \right].
 \label{eq:pbw}
 \end{equation}
-For binary checkers $\pbw_t$ estimates $J_{\text{wrong}}$; for the judge and the partial-credit checkers it counts only answers paid more than one half. \emph{Exploitation} is the change of this rate over training, $E = \overline{\pbw}_L - \overline{\pbw}_F$, the mean over a late window $L$ minus the mean over an early window $F$. Following the pre-registration, a run is \emph{exploited} if $E \geq 0.10$. The \emph{mass} $h$ of a checker is the paid-but-wrong rate of $\pi_0$.
+For binary checkers $\pbw_t$ estimates $J_{\text{wrong}}$; for the judge and the partial-credit checkers it counts only answers paid more than one half. \emph{Exploitation} is the change of this rate over training, $E = \overline{\pbw}_L - \overline{\pbw}_F$, the mean over a late window $L$ minus the mean over an early window $F$. Following the pre-registration, a run is \emph{exploited} if $E \geq 0.10$. The \emph{starting rate} $h$ of a checker is the paid-but-wrong rate of $\pi_0$.
 
 \paragraph{Reachability.} Let $P$ be the set of problems on which a run produced at least one paid-but-wrong answer at step 75 or later. For each $x \in P$ we draw $K = 64$ independent answers $a_1, \dots, a_K \sim \pi_0(\cdot \mid x)$ at temperature 1 and define
 \begin{equation}
@@ -156,7 +157,7 @@ Checker & Figure label & Reward & Seeds & $h$ \\
 \checker{judge\_ref\_prob} & LLM judge & Qwen3-4B's $P(\text{YES})$ given problem, reference and reply & 1 & 0.000$^\dagger$ \\
 \checker{substring\_all} & right number anywhere & 1 if the gold number occurs anywhere in the reply & 2 & 0.080 \\
 \midrule
-\checker{mbpp\_plus} & honest control (MBPP+) & 1 if the program passes MBPP's tests and MBPP+ & 1 & 0 \\
+\checker{mbpp\_plus} & honest control (MBPP+) & 1 if the program passes MBPP's tests and MBPP+ & 1 & 0.000 \\
 \checker{mbpp\_base} & MBPP original tests & 1 if the program passes MBPP's original tests & 3 & 0.026 \\
 \bottomrule
 \end{tabularx}
@@ -291,7 +292,7 @@ Checker & $h$ & $\omega$ & Exploitation $E$ (per seed) & $\pbw$ at end (per seed
 \checker{judge\_ref\_prob} & 0.000 & 0.000 & $+0.03$ & 0.03 & 0.73 $\to$ 0.71 \\
 \checker{substring\_all} & 0.080 & 0.105 & $\mathbf{+0.42},\ +0.07$ & 0.45, 0.15 & 0.68 $\to$ 0.53 \\
 \midrule
-\checker{mbpp\_plus} & 0 & 0 & $0.00$ & 0.00 & 0.25 $\to$ 0.57 \\
+\checker{mbpp\_plus} & 0.000 & 0.000 & $0.00$ & 0.00 & 0.25 $\to$ 0.57 \\
 \checker{mbpp\_base} & 0.026 & 0.098 & $+0.06,\ +0.05,\ +0.01$ & 0.07, 0.06, 0.13 & 0.24 $\to$ 0.49 \\
 \bottomrule
 \end{tabular}}
@@ -340,7 +341,7 @@ Run & Exploited problems $|P|$ & Reach ($K = 64$) & Starting $\pbw$ on $P$ & Sta
 \label{sec:discussion}
 
 \subsection{Relation to prior findings}
-Our results are consistent with the closest prior studies once the ease of the loophole is taken into account (\cref{tab:prior}). Small models do exploit loopholes: \citet{deng2026simhack} observe hacking with the same Qwen3-0.6B model, on coding environments whose prompts point to the loophole, and we observe strong exploitation of \checker{substring\_all} at the same scale. Loopholes that the model rarely or never stumbles into are not exploited: \citet{egashira2026} report that a reward paying any output containing the word ``python'' caused collapse, but not for a model that never produced the word, which mirrors our narrow loophole. In the terms of \cref{eq:omega}, a reward keyed to a word the model never writes has $\omega = 0$, and \cref{eq:drgrpo} has nothing to reinforce. On MBPP, \citet{zhang2026leaky} find rewarded false positives essentially flat over 400--800 steps, and we find only small rises in 120. Together these results are consistent with the ease of a loophole relative to the task, rather than model size alone, determining whether it is exploited at this scale; we did not vary model size. Whether larger models with longer training discover exploits that are unreachable from the starting model, as reports on frontier systems suggest \citep{baker2025monitoring}, remains open.
+Our results are consistent with the closest prior studies once the ease of the loophole is taken into account (\cref{tab:prior}). Small models do exploit loopholes: \citet{deng2026simhack} observe hacking with the same Qwen3-0.6B model, on coding environments whose prompts point to the loophole, and we observe strong exploitation of \checker{substring\_all} at the same scale in one of two seeds. Loopholes that the model rarely or never stumbles into are not exploited: \citet{egashira2026} report that a reward paying any output containing the word ``python'' caused collapse, but not for a model that never produced the word, which mirrors our narrow loophole. In the terms of \cref{eq:omega}, a reward keyed to a word the model never writes has $\omega = 0$, and \cref{eq:drgrpo} has nothing to reinforce. On MBPP, \citet{zhang2026leaky} find rewarded false positives essentially flat over 400--800 steps, and we find only small rises in 120. Together these results are consistent with the ease of a loophole relative to the task, rather than model size alone, determining whether it is exploited at this scale; we did not vary model size. Whether larger models with longer training discover exploits that are unreachable from the starting model, as reports on frontier systems suggest \citep{baker2025monitoring}, remains open.
 
 \begin{table}[t!]
 \centering
@@ -370,7 +371,7 @@ This work studies how reward hacking is measured and releases no new capability.
 
 % ================================================================
 \section{Conclusion}
-In a small pre-registered study, RL exploited one of eight flawed checkers past the pre-registered threshold and showed smaller rises on a second; both already paid a large share of the starting model's reward to wrong answers, an exploratory observation, and most of what they paid for was already produced by the starting model. A ramp towards a narrow loophole did not create exploitation at this scale. The largest effect in our data, however, came from the measurement: a common box-matching referee would have reported large reward hacking that did not occur. Studies of reward hacking should validate their referee on the outputs of the trained model.
+In a small pre-registered study, RL exploited one of six flawed checkers past the pre-registered threshold and showed smaller rises on a second; both already paid a large share of the starting model's reward to wrong answers, an exploratory observation, and most of what they paid for was already produced by the starting model. A ramp towards a narrow loophole did not create exploitation at this scale. The largest effect in our data, however, came from the measurement: a common box-matching referee would have reported large reward hacking that did not occur. Studies of reward hacking should validate their referee on the outputs of the trained model.
 
 \section*{Code, data and use of AI tools}
 All code, configurations, saved outputs, audits, reachability reports, the re-scoring and analysis scripts and the pre-registration with dated amendments are available at \url{https://github.com/Himanshu-Sangshetti/format-drift-rl}. Re-scoring the released outputs and redrawing every figure requires only a CPU. Claude (Anthropic) assisted with code, analysis and drafting; the author is responsible for the content.

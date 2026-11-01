@@ -90,6 +90,7 @@ ce.mbpp_plus(hard_coded, "3")   # 0.0: fails MBPP+ (the code referee)
 
 ```bash
 pip install -r requirements.txt
+python tests/test_referee.py              # the 18 referee test cases
 # re-score the released answers and redo the pre-registered test (CPU, minutes)
 python fdrl/relabel.py results/runs
 python fdrl/analysis_extra.py && python fdrl/analysis_review.py   # drift, cluster CIs, sensitivity, reach baselines

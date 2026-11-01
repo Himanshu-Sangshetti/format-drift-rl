@@ -66,7 +66,7 @@ box(16, 12, "Qwen3-0.6B", "64 answers/step" if SHORT else "8 answers each\n(64 p
 box(31.5, 21, "Flawed checker", "one per run = reward" if SHORT else "one per run: right number anywhere,\nin last 50 chars (+ ramp / + random\ncredit), LLM judge, MBPP tests", "#fdf0ea", ec=ORANGE)
 box(56, 13, "Dr. GRPO", "reinforce paid" if SHORT else "reinforce paid\nanswers; LoRA r16\n120 steps", "#f3f6fa")
 box(72.5, 13.5, "Referee", "never trains" if SHORT else "robust maths grader\nor MBPP+; never\nused for training", "#eef7f2", ec=AQUA, ls="--")
-box(89.5, 10, "Measure", "paid-but-wrong" if SHORT else "cheat rate =\npaid but wrong;\nreach", "#f6f6f4")
+box(89.5, 10, "Measure", "paid but\nwrong" if SHORT else "cheat rate =\npaid but wrong;\nreach", "#f6f6f4")
 arr(12.9, 15.6); arr(28.4, 31.1); arr(52.9, 55.6); arr(69.4, 72.1); arr(86.4, 89.1)
 ax.add_patch(FancyArrowPatch((62.5, 18.8), (22, 18.8), connectionstyle="arc3,rad=0.1", arrowstyle="-|>", mutation_scale=9, lw=.8, color=INK2))
 ax.text(42, 19.6, "next step" if SHORT else "updated model, next step (repeat 120 steps)", ha="center", fontsize=7, color=INK2, bbox=dict(fc="white", ec="none", pad=1))
@@ -74,8 +74,8 @@ ax.text(42, 19.6, "next step" if SHORT else "updated model, next step (repeat 12
 # (b) exploitation per checker
 ax = fig.add_subplot(SLOT["b"])
 panel(ax, "b", "Rise in the paid-but-wrong rate per checker")
-rows = [("strict", "honest control", 1, GRAY, "o"), ("tail50_density", "last-50 + random credit", 4, BLUE, "s"),
-        ("substring_tail50", "right number in last 50", 4, BLUE, "o"), ("tail50_slope", "last-50 + ramp", 4, BLUE, "^"),
+rows = [("strict", "honest control", 1, GRAY, "o"), ("tail50_density", "last 50 + random credit", 4, BLUE, "s"),
+        ("substring_tail50", "last 50 chars", 4, BLUE, "o"), ("tail50_slope", "last 50 + ramp", 4, BLUE, "^"),
         ("judge_ref_prob", "LLM judge (Qwen3-4B)", 1, AQUA, "D"), ("substring_all", "right number anywhere", 2, ORANGE, "o"),
         ("mbpp_plus", "honest control (MBPP+)", 1, GRAY, "o"), ("mbpp_base", "MBPP original tests", 3, ORANGE, "s")]
 hs = {"strict": "0%", "tail50_density": "1.3%", "substring_tail50": "1.3%", "tail50_slope": "1.3%", "judge_ref_prob": "0%",
@@ -125,8 +125,7 @@ for y, (lab, e, col) in enumerate(rr):
     ax.barh(y, 1, height=.5, color="#ecebe8")
     ax.barh(y, e["reach"], height=.5, color=col, alpha=.9)
     ax.text(e["reach"] + 0.025, y, f"{e['reach']:.0%}", fontsize=7, color=INK, va="center")
-    ax.text(1.0, y + 0.42, f"{e['n_hack_problems']} problems", fontsize=6.3, color=INK2, ha="right")
-ax.set_yticks(range(len(rr)), [r[0] for r in rr], fontsize=8); ax.invert_yaxis()
+ax.set_yticks(range(len(rr)), [f"{r[0]}\n{r[1]['n_hack_problems']} problems" for r in rr], fontsize=8); ax.invert_yaxis()
 ax.set_xlim(0, 1.02); ax.set_xticks([0, .5, 1], ["0", "50%", "100%"])
 ax.set_xlabel("exploited problems on which the starting model\nis paid-but-wrong within 64 samples")
 for s in ("left",):
