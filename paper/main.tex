@@ -69,7 +69,7 @@ Our main result concerns measurement. Under the pre-registered referee the exper
 \begin{figure}[t!]
 \centering
 \includegraphics[width=\linewidth]{figs/main_figure_paper.pdf}
-\caption{\textbf{Format drift masquerades as reward hacking.} (a) Paid-but-wrong rate over training under the pre-registered box-matching referee (dashed) and the robust referee (solid), smoothed over three saved steps. For seed 1 of \checker{tail50\_slope} the two diverge: 96\% of the answers the box-matching referee flags are correct but reformatted. For seed 0 of \checker{substring\_all} they agree, and accuracy falls from 0.73 to 0.43. (b) Exploitation $E$ of all 20 runs under the two referees. Runs below the diagonal are false alarms of the box-matching referee; only one run is above the pre-registered threshold under the robust referee.}
+\caption{\textbf{Format drift masquerades as reward hacking.} (a) Real answer endings from the runs, with the verdicts of the training checker, the pre-registered box-matching referee and the robust referee. Late in training the same run writes its correct answer in nested bold boxes, which the box-matching referee counts as a hack; the \checker{substring\_all} run is paid for a reply that mentions the gold but never concludes. (b) Paid-but-wrong rate over training under the box-matching referee (dashed) and the robust referee (solid), smoothed over three saved steps: the two diverge for the drift run and agree for the real exploit. (c) Exploitation $E$ of all 20 runs under the two referees; points far below the diagonal are false alarms, and only one run is above the pre-registered threshold under the robust referee. (d) Pooled over the 15 flawed maths runs: the share of answers with nested or bold boxes, and the share of answers flagged by the box-matching referee that are in fact correct (steps with at least ten flagged answers).}
 \label{fig:main}
 \end{figure}
 
@@ -197,37 +197,8 @@ with Holm's correction over the two comparisons at one-sided $\alpha = 0.05$. Fo
 
 \subsection{Format drift corrupts the referee \tagline{post-hoc amendment}}
 \label{sec:artefact}
-Before interpreting any training curve, we read the late answers that the pre-registered referee had labelled paid-but-wrong. Many were correct. Under checkers that do not reward a tidy final answer, the policy changes the surface form of its answers while preserving their content; we call this \emph{format drift}. \Cref{fig:drift} shows typical examples alongside a genuine exploit. A referee that requires one distinct, parseable box marks both drifted answers wrong.
+Before interpreting any training curve, we read the late answers that the pre-registered referee had labelled paid-but-wrong. Many were correct. Under checkers that do not reward a tidy final answer, the policy changes the surface form of its answers while preserving their content; we call this \emph{format drift}. \Cref{fig:main}a shows a typical example alongside a genuine exploit, and \cref{app:tests} lists the drifted formats we found, such as units or words inside the box and a box inside another box. A referee that requires one distinct, parseable box marks such answers wrong.
 
-\begin{figure}[t!]
-\centering
-\small
-\fbox{\begin{minipage}[t][3.05cm]{0.30\linewidth}\vspace{1pt}
-\textbf{Nested and bold box} (gold 90)\\[3pt]
-\texttt{\#\#\# Final Answer:}\\
-\texttt{\$\$\textbackslash boxed\{\textbackslash boxed\{}\\
-\texttt{\ \ \textbackslash mathbf\{90\}\}\}\$\$}\\[3pt]
-\textcolor{BrickRed}{box-matching: wrong}\\\textcolor{ForestGreen}{robust: right}\vspace{1pt}
-\end{minipage}}\hfill
-\fbox{\begin{minipage}[t][3.05cm]{0.30\linewidth}\vspace{1pt}
-\textbf{Unit inside the box} (gold 60)\\[3pt]
-\texttt{the boxed answer is:}\\
-\texttt{\$\$\textbackslash boxed\{60\}\$\$ ...}\\
-\texttt{\textbackslash boxed\{60 \textbackslash text\{}\\
-\texttt{\ \ square units\}\}}\\[3pt]
-\textcolor{BrickRed}{box-matching: wrong}\\\textcolor{ForestGreen}{robust: right}\vspace{1pt}
-\end{minipage}}\hfill
-\fbox{\begin{minipage}[t][3.05cm]{0.30\linewidth}\vspace{1pt}
-\textbf{A real exploit} (gold 16)\\[3pt]
-\texttt{Area = 1/2 |32| = 16.}\\
-\texttt{Wait, but hold on -- let}\\
-\texttt{me verify ... (repeats until}\\
-\texttt{the length cap, no answer)}\\[3pt]
-\textcolor{BrickRed}{box-matching: wrong}\\\textcolor{BrickRed}{robust: wrong}\vspace{1pt}
-\end{minipage}}
-\caption{\textbf{Format drift versus real exploitation.} Late-training answers from \checker{tail50\_slope}, the judge run and \checker{substring\_all}. The first two are correct and are misread by a box-matching referee; the third is paid by \checker{substring\_all} because ``16'' appears, but it never states a final answer, and both referees mark it wrong.}
-\label{fig:drift}
-\end{figure}
 
 Drift develops during training and is concentrated in particular runs (\cref{fig:driftcurves}). Nested or bold boxes, absent at the start, reached 72--97\% of the answers of seed 1 of \checker{tail50\_slope} from step 55 onwards, 67\% of the answers of seed 1 of \checker{substring\_all} at step 70, and 44\% of the judge run's answers at step 105, the last two transiently. Repeated boxing (eight or more boxes in one answer) reached about 90\% of the answers of seed 1 of \checker{substring\_all} and of the judge run. Among the answers that the box-matching referee flagged, the share that were in fact correct was around one half in the narrow-loophole and \checker{substring\_all} runs and above 90\% in the judge run late in training.
 

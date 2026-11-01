@@ -4,7 +4,7 @@
 
 Himanshu Sangshetti · [Paper (PDF)](paper/main.pdf) · November 2026
 
-![Format drift masquerades as reward hacking: paid-but-wrong rate under two referees, and apparent vs true exploitation for all 20 runs](paper/figs/main_figure.png)
+![Format drift masquerades as reward hacking: real answers and referee verdicts, paid-but-wrong rate under two referees, apparent vs true exploitation for all 20 runs, and drift with false alarms over training](paper/figs/main_figure.png)
 
 When RL with verifiable rewards trains a model against a checker that has a loophole, and the model
 learns to cheat, where does the cheat come from? Is it **selected** from behaviour the starting model
