@@ -4,7 +4,7 @@
 
 Himanshu Sangshetti · [Paper (PDF)](paper/main.pdf) · November 2026
 
-![Overview: setup, exploitation per checker, grader inflation, reachability](paper/figs/main_figure.png)
+![Format drift masquerades as reward hacking: paid-but-wrong rate under two referees, and apparent vs true exploitation for all 20 runs](paper/figs/main_figure.png)
 
 When RL with verifiable rewards trains a model against a checker that has a loophole, and the model
 learns to cheat, where does the cheat come from? Is it **selected** from behaviour the starting model
@@ -95,7 +95,7 @@ python tests/test_referee.py              # the 18 referee test cases
 python fdrl/relabel.py results/runs
 python fdrl/analysis_extra.py && python fdrl/analysis_review.py   # drift, cluster CIs, sensitivity, reach baselines
 # redraw the figures
-python paper/figure_main.py && python paper/figure_main.py --paper
+python paper/figure_main.py
 python paper/figure_curves.py && python paper/figure_curves.py --paper && python paper/figure_extra.py
 # rerun everything on Modal (about $38 on L40S GPUs)
 SD_GPU=L40S modal run fdrl/modal_app.py --plan plans/main_runs.txt    # 20 training runs
