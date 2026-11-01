@@ -167,10 +167,10 @@ for run in MATHS:
     hi = run in ("substring_all_s0", "substring_all_s1", "judge_ref_prob_s0", "tail50_slope_s1")
     ax.plot([e["step"] for e in DRIFT[run]], smooth([e["chars"] / 1000 for e in DRIFT[run]]), color=COL[prefix(run)],
             lw=1.25 if hi else .7, alpha=1 if hi else .55, zorder=3 if hi else 2)
-ax.set_xlim(0, 121); ax.set_ylim(0, 4.5); ax.set_xticks([0, 30, 60, 90, 120])
+ax.set_xlim(0, 121); ax.set_ylim(0, 5.2); ax.set_yticks([0, 1, 2, 3, 4, 5]); ax.set_xticks([0, 30, 60, 90, 120])
 ax.set_ylabel("thousand characters"); ax.set_xlabel("training step")
 ax.grid(axis="y", color=GRID, lw=.5); ax.set_axisbelow(True)
-ax.text(4, 4.3, "number anywhere", fontsize=5.2, color=ORANGE, ha="left", va="center")
+ax.text(4, 4.9, "number anywhere", fontsize=5.2, color=ORANGE, ha="left", va="center")
 ax.text(119, 3.75, "judge", fontsize=5.2, color=AQUA, ha="right", va="center")
 ax.text(119, 0.25, "length cap: 1,536 tokens", fontsize=5.2, color=INK2, ha="right", va="bottom")
 
