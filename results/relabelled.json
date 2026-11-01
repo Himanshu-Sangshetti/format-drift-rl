@@ -1,0 +1,202 @@
+[
+ {
+  "run": "judge_ref_prob_s0",
+  "expl_old": 0.53125,
+  "expl_new": 0.03125,
+  "fp_last_new": 0.03125,
+  "acc_first_new": 0.7265625,
+  "acc_last_new": 0.7109375,
+  "old_hacks": 208,
+  "false_alarms": 190
+ },
+ {
+  "run": "mbpp_base_s0",
+  "expl_old": 0.05859375,
+  "expl_new": 0.05859375,
+  "fp_last_new": 0.06640625,
+  "acc_first_new": 0.265625,
+  "acc_last_new": 0.4921875,
+  "old_hacks": 90,
+  "false_alarms": 0
+ },
+ {
+  "run": "mbpp_base_s1",
+  "expl_old": 0.046875,
+  "expl_new": 0.046875,
+  "fp_last_new": 0.0625,
+  "acc_first_new": 0.2265625,
+  "acc_last_new": 0.55078125,
+  "old_hacks": 84,
+  "false_alarms": 0
+ },
+ {
+  "run": "mbpp_base_s2",
+  "expl_old": 0.0078125,
+  "expl_new": 0.0078125,
+  "fp_last_new": 0.125,
+  "acc_first_new": 0.21875,
+  "acc_last_new": 0.4375,
+  "old_hacks": 110,
+  "false_alarms": 0
+ },
+ {
+  "run": "mbpp_plus_s0",
+  "expl_old": 0.0,
+  "expl_new": 0.0,
+  "fp_last_new": 0.0,
+  "acc_first_new": 0.25,
+  "acc_last_new": 0.5703125,
+  "old_hacks": 0,
+  "false_alarms": 0
+ },
+ {
+  "run": "strict_s0",
+  "expl_old": 0.0,
+  "expl_new": 0.0,
+  "fp_last_new": 0.0,
+  "acc_first_new": 0.703125,
+  "acc_last_new": 0.71484375,
+  "old_hacks": 0,
+  "false_alarms": 0
+ },
+ {
+  "run": "substring_all_s0",
+  "expl_old": 0.4453125,
+  "expl_new": 0.41796875,
+  "fp_last_new": 0.44921875,
+  "acc_first_new": 0.734375,
+  "acc_last_new": 0.42578125,
+  "old_hacks": 320,
+  "false_alarms": 33
+ },
+ {
+  "run": "substring_all_s1",
+  "expl_old": 0.58984375,
+  "expl_new": 0.0703125,
+  "fp_last_new": 0.1484375,
+  "acc_first_new": 0.625,
+  "acc_last_new": 0.640625,
+  "old_hacks": 512,
+  "false_alarms": 397
+ },
+ {
+  "run": "substring_tail50_s0",
+  "expl_old": 0.0234375,
+  "expl_new": 0.0234375,
+  "fp_last_new": 0.03125,
+  "acc_first_new": 0.7578125,
+  "acc_last_new": 0.5703125,
+  "old_hacks": 21,
+  "false_alarms": 1
+ },
+ {
+  "run": "substring_tail50_s1",
+  "expl_old": 0.06640625,
+  "expl_new": 0.0,
+  "fp_last_new": 0.0078125,
+  "acc_first_new": 0.609375,
+  "acc_last_new": 0.70703125,
+  "old_hacks": 30,
+  "false_alarms": 25
+ },
+ {
+  "run": "substring_tail50_s2",
+  "expl_old": 0.0234375,
+  "expl_new": 0.0234375,
+  "fp_last_new": 0.0234375,
+  "acc_first_new": 0.6796875,
+  "acc_last_new": 0.7265625,
+  "old_hacks": 20,
+  "false_alarms": 9
+ },
+ {
+  "run": "substring_tail50_s3",
+  "expl_old": -0.0390625,
+  "expl_new": -0.03515625,
+  "fp_last_new": 0.00390625,
+  "acc_first_new": 0.5390625,
+  "acc_last_new": 0.765625,
+  "old_hacks": 40,
+  "false_alarms": 17
+ },
+ {
+  "run": "tail50_density_s0",
+  "expl_old": -0.01171875,
+  "expl_new": -0.0078125,
+  "fp_last_new": 0.0,
+  "acc_first_new": 0.671875,
+  "acc_last_new": 0.73046875,
+  "old_hacks": 11,
+  "false_alarms": 4
+ },
+ {
+  "run": "tail50_density_s1",
+  "expl_old": -0.00390625,
+  "expl_new": 0.0,
+  "fp_last_new": 0.0,
+  "acc_first_new": 0.6796875,
+  "acc_last_new": 0.75390625,
+  "old_hacks": 33,
+  "false_alarms": 30
+ },
+ {
+  "run": "tail50_density_s2",
+  "expl_old": 0.01953125,
+  "expl_new": 0.02734375,
+  "fp_last_new": 0.02734375,
+  "acc_first_new": 0.7109375,
+  "acc_last_new": 0.6875,
+  "old_hacks": 23,
+  "false_alarms": 3
+ },
+ {
+  "run": "tail50_density_s3",
+  "expl_old": -0.0234375,
+  "expl_new": -0.015625,
+  "fp_last_new": 0.0078125,
+  "acc_first_new": 0.546875,
+  "acc_last_new": 0.77734375,
+  "old_hacks": 14,
+  "false_alarms": 3
+ },
+ {
+  "run": "tail50_slope_s0",
+  "expl_old": 0.00390625,
+  "expl_new": 0.00390625,
+  "fp_last_new": 0.01171875,
+  "acc_first_new": 0.734375,
+  "acc_last_new": 0.7265625,
+  "old_hacks": 9,
+  "false_alarms": 1
+ },
+ {
+  "run": "tail50_slope_s1",
+  "expl_old": 0.4296875,
+  "expl_new": 0.0,
+  "fp_last_new": 0.0,
+  "acc_first_new": 0.6171875,
+  "acc_last_new": 0.76953125,
+  "old_hacks": 307,
+  "false_alarms": 294
+ },
+ {
+  "run": "tail50_slope_s2",
+  "expl_old": 0.01953125,
+  "expl_new": 0.01171875,
+  "fp_last_new": 0.01171875,
+  "acc_first_new": 0.7421875,
+  "acc_last_new": 0.63671875,
+  "old_hacks": 21,
+  "false_alarms": 10
+ },
+ {
+  "run": "tail50_slope_s3",
+  "expl_old": -0.0078125,
+  "expl_new": -0.04296875,
+  "fp_last_new": 0.01171875,
+  "acc_first_new": 0.609375,
+  "acc_last_new": 0.73828125,
+  "old_hacks": 23,
+  "false_alarms": 13
+ }
+]

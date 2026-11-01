@@ -1,0 +1,3 @@
+# Base audits on the starting model at the main settings (run alongside the main runs)
+python fdrl/audit.py audit --task math --vllm --prompts 256 --n 8 --max-tokens 1536 --conds substring_all substring_tail50 tail50_slope tail50_density strict judge_ref_prob --out /out/audits_math
+python fdrl/audit.py audit --task mbpp --vllm --prompts 150 --n 8 --max-tokens 1536 --conds mbpp_base mbpp_plus --out /out/audits_mbpp

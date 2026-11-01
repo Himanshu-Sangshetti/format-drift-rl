@@ -1,0 +1,3 @@
+# After the main runs: base reachability of late paid-but-wrong answers (steps >= 75), K = 64
+python fdrl/audit.py reach --task math --vllm --runs /out/runs/main --k 64 --max-tokens 1536 --late-from 75
+python fdrl/audit.py reach --task mbpp --vllm --runs /out/runs/main --k 64 --max-tokens 1536 --late-from 75

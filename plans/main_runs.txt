@@ -1,0 +1,21 @@
+# Amendment 8 main run set: 20 runs, Qwen3-0.6B, 120 steps, 1,536 tokens, L40S. Launch with SD_GPU=L40S SD_WANDB=1.
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_slope --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_slope --seed 1
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_slope --seed 2
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_slope --seed 3
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond substring_tail50 --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond substring_tail50 --seed 1
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond substring_tail50 --seed 2
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond substring_tail50 --seed 3
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_density --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_density --seed 1
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_density --seed 2
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond tail50_density --seed 3
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond substring_all --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond substring_all --seed 1
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond strict --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --cond judge_ref_prob --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --task mbpp --cond mbpp_base --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --task mbpp --cond mbpp_base --seed 1
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --task mbpp --cond mbpp_plus --seed 0
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --model Qwen/Qwen3-0.6B --out /out/runs/main --resume --report wandb --task mbpp --cond mbpp_base --seed 2

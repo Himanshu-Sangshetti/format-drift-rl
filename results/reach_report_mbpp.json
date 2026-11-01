@@ -1,0 +1,38 @@
+{
+  "mbpp_base_s0": {
+    "cond": "mbpp_base",
+    "n_late": 640,
+    "n_hack": 48,
+    "n_hack_problems": 12,
+    "k": 64,
+    "reach": 0.6666666666666666,
+    "base_pbw_rate_on_hack_problems": 0.08333333333333333
+  },
+  "mbpp_base_s1": {
+    "cond": "mbpp_base",
+    "n_late": 640,
+    "n_hack": 54,
+    "n_hack_problems": 11,
+    "k": 64,
+    "reach": 0.6363636363636364,
+    "base_pbw_rate_on_hack_problems": 0.234375
+  },
+  "mbpp_base_s2": {
+    "cond": "mbpp_base",
+    "n_late": 640,
+    "n_hack": 62,
+    "n_hack_problems": 13,
+    "k": 64,
+    "reach": 0.9230769230769231,
+    "base_pbw_rate_on_hack_problems": 0.1778846153846154
+  },
+  "mbpp_plus_s0": {
+    "cond": "mbpp_plus",
+    "n_late": 640,
+    "n_hack": 0,
+    "n_hack_problems": 0,
+    "k": 64,
+    "reach": null,
+    "base_pbw_rate_on_hack_problems": null
+  }
+}

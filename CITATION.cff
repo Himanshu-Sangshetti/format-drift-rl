@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Format Drift Masquerades as Reward Hacking: A Pre-registered Study of When RL Exploits Flawed Checkers"
+authors:
+  - family-names: Sangshetti
+    given-names: Himanshu
+date-released: 2026-11-01
+url: "https://github.com/Himanshu-Sangshetti/format-drift-rl"
+license: MIT

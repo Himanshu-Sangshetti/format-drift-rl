@@ -1,0 +1,2 @@
+# Amendment 7 timing test: 20 steps of strict, not reported. Run with SD_GPU=H100. (micro 16 without checkpointing ran out of memory)
+python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 20 --max-tokens 1536 --micro 8 --model Qwen/Qwen3-0.6B --out /out/timing --cond strict --seed 0 --tag _timing2_h100
