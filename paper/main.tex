@@ -1,239 +1,413 @@
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
+\documentclass[10pt]{article}
+
+% ---------------------------------------------------------------- layout and fonts
+\usepackage[letterpaper,textwidth=6.5in,textheight=9in,top=1in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern}
+\usepackage{newtxtext,newtxmath}
+\usepackage[scaled=0.86]{beramono}
 \usepackage{microtype}
-\usepackage{amsmath,amssymb}
-\usepackage{booktabs}
+\usepackage{amsmath,bm}
+\usepackage{booktabs,multirow,array,tabularx}
 \usepackage{graphicx}
-\usepackage{xcolor}
-\usepackage[hidelinks]{hyperref}
-\usepackage[numbers,sort&compress]{natbib}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[section]{placeins}
+\usepackage{caption,subcaption}
 \usepackage{enumitem}
 \usepackage{fancyvrb}
-\setlist{itemsep=2pt,topsep=4pt}
-\fvset{fontsize=\footnotesize,frame=single,framesep=2mm}
+\usepackage[round,authoryear]{natbib}
+\definecolor{linkblue}{HTML}{1F4E8C}
+\usepackage[colorlinks=true,linkcolor=linkblue,citecolor=linkblue,urlcolor=linkblue]{hyperref}
+\usepackage[nameinlink,capitalise,noabbrev]{cleveref}
 
-\title{Format Drift Masquerades as Reward Hacking:\\
-A Pre-registered Study of When RL Exploits Flawed Checkers}
-\author{Himanshu Sangshetti\\ Independent researcher\\ \texttt{himanshusangshetty@gmail.com}}
-\date{November 2026}
+\captionsetup{font=small,labelfont=bf,labelsep=period,skip=6pt}
+\setlist{itemsep=2pt,topsep=3pt,leftmargin=1.4em}
+\setlength{\parskip}{3pt}
+\fvset{fontsize=\footnotesize}
+\newcommand{\checker}[1]{\texttt{#1}}
+\newcommand{\pbw}{\mathrm{PBW}}
+
+\makeatletter
+\renewcommand{\@maketitle}{%
+  \vspace*{-0.4in}
+  \hrule height 3pt \vspace{0.18in}
+  \begin{center}{\LARGE\bfseries \@title\par}\end{center}
+  \vspace{0.12in}\hrule height 1pt\vspace{0.22in}
+  \begin{center}{\large \@author}\par\vspace{0.06in}{\small \@date}\end{center}
+  \vspace{0.12in}}
+\makeatother
+
+\title{Format Drift Masquerades as Reward Hacking:\\[2pt]
+\Large A Pre-registered Study of When RL Exploits Flawed Checkers}
+\author{Himanshu Sangshetti\\[2pt]
+\normalsize Independent researcher \quad\texttt{himanshusangshetty@gmail.com}}
+\date{November 2026 \quad·\quad Code and data: \url{https://github.com/Himanshu-Sangshetti/format-drift-rl}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Reinforcement learning with verifiable rewards trains language models against automatic checkers, and checkers have loopholes. We asked whether hacks that RL learns against a flawed checker are \emph{selected} from behaviour the starting model already shows, or \emph{discovered} by following a gradual slope in the reward. We pre-registered the study, then trained Qwen3-0.6B with Dr.~GRPO for 120 steps in 20 runs against six maths checkers and two code checkers (MBPP tests versus MBPP+), and measured how often the checker paid answers that a referee marks wrong. Three findings stand out. First, \emph{the referee itself failed under training}: models drift into answer formats a fixed grader cannot read (nested and bold boxes, words inside boxes, repeated ``Final Answer'' lines), and a box-required referee labelled up to 96\% of correct paid answers as hacks in one run. With a robust last-box referee, a headline effect of $+0.43$ exploitation vanished to $0.00$. Second, with the robust referee, real exploitation appeared only for checkers whose loophole was easier than the task: a checker that pays whenever the gold number appears anywhere ($+0.42$ in one of two seeds, true accuracy $0.73\to0.43$) and the original MBPP tests ($+0.01$ to $+0.06$). In these runs the starting model already produced paid-but-wrong answers on 54--92\% of the problems where the trained model did, consistent with selection. Third, our pre-registered causal test was null: adding a partial-credit slope to a narrow loophole did not increase exploitation relative to the loophole alone or to a density-matched random-credit control (4 seeds each, one-sided permutation $p \geq 0.47$). We release code, the pre-registration with all amendments, saved answers and a robust grading rule. The main methodological lesson is that measurements of reward hacking need referees that are robust to format drift caused by the training itself.
+\noindent
+Reinforcement learning with verifiable rewards (RLVR) optimises language models against automatic checkers, and checkers have loopholes. We ask where the hacks that RL learns against a flawed checker come from: are they \emph{selected} from behaviour the starting model already exhibits, or \emph{discovered} during training? We pre-registered a study in which Qwen3-0.6B is trained with Dr.~GRPO against eight checkers on MATH and MBPP, including a narrow loophole presented alone, with a partial-credit ramp leading to it, and with an equal amount of random credit, and we measure how often each checker pays answers that an independent referee marks wrong. The most consequential finding concerns measurement rather than optimisation. Training changes the \emph{format} in which the model writes answers (nested and bold boxes, words inside boxes, repeated ``Final Answer'' lines), and a conventional box-matching referee reads these right answers as wrong: in one run 96\% of the answers it flagged as hacks were correct, and an apparent exploitation of $+0.43$ was in fact zero. With a referee robust to such drift, exploitation is confined to loopholes that are easier than the task itself. A checker that pays whenever the gold number appears anywhere was exploited strongly in one of two seeds ($+0.42$; true accuracy fell from 0.73 to 0.43), and MBPP's original unit tests mildly ($+0.01$ to $+0.06$). In these runs the starting model already produced paid-but-wrong answers on 54--92\% of the problems where the trained model did, consistent with selection. The pre-registered causal test was null: the ramp did not increase exploitation over the loophole alone or over the random-credit control (one-sided permutation $p = 0.74$ and $0.70$). We release the code, every saved model output, the pre-registration with all amendments, and a drift-robust referee, and we argue that measurements of reward hacking must validate their referee on the trained model's outputs, not the starting model's.
 \end{abstract}
 
+% ================================================================
 \section{Introduction}
-RL with verifiable rewards (RLVR) trains models against checkers such as answer matchers, unit tests and LLM judges \citep{deepseekr1,drgrpo,dapo}. Checkers are imperfect, and a checker that pays wrong answers invites the policy to exploit it. A practical question for anyone building RL environments is whether such exploitation can be predicted before training.
+\label{sec:intro}
 
-The answer depends on where hacks come from. If a hack is \emph{selected}, the starting model already produces it occasionally and RL amplifies it; then sampling the starting model and counting paid-but-wrong answers (the \emph{mass} of the defect) should flag risky checkers, as \citet{zhang2026leaky} found for MBPP. If a hack is \emph{discovered}, the starting model never produces it and RL reaches it by following a slope in the reward; then a mass audit is blind and a different audit is needed. \citet{egashira2026} report collapses even at low error rates, and \citet{deng2026simhack} find that the starting rate alone does not predict when hacking begins, both of which leave room for discovery.
+Reinforcement learning with verifiable rewards has become a standard way to improve reasoning in language models: the model samples answers, an automatic checker scores them, and the policy is updated towards high-scoring answers \citep{deepseekmath,tulu3,deepseekr1}. The checker is usually a few lines of code, such as an answer extractor and a comparison, a set of unit tests, or a prompt to another model. Such checkers are imperfect, and a policy optimised against an imperfect objective tends to find and exploit its errors, a phenomenon variously called reward hacking or specification gaming \citep{amodei2016concrete,krakovna2020specification,skalse2022defining}. As training moves to thousands of programmatically generated environments, each with its own checker, it becomes important to know \emph{in advance} which checkers will be exploited.
 
-We designed a small, pre-registered study to separate the two. Its central causal test compares a narrow loophole alone, the same loophole with a partial-credit slope towards it, and the loophole with the same amount of partial credit paid at random. We also measure \emph{reachability}: on problems where a trained model hacks late in training, can the starting model already produce a paid-but-wrong answer?
+Whether that is possible depends on where hacks come from. If a hack is \emph{selected}, the starting model already produces it occasionally, and RL merely increases its frequency; sampling the starting model and counting how often the checker pays wrong answers should then flag the risky checkers, as \citet{zhang2026leaky} found for MBPP. If a hack is \emph{discovered}, the starting model never produces it, and RL arrives at it by following a gradient in the reward; an audit of the starting model would then be blind to it. Recent work leaves both possibilities open: \citet{egashira2026} observe training collapse even when the verifier's initial error rate is low, and \citet{deng2026simhack} report that the initial hack rate alone does not determine when hacking begins.
 
-The study did not go as planned, and the way it failed is our main contribution. When we read the answers flagged as hacks, most were right. Training changed the format in which the model writes answers, and our pre-registered referee, like many simple graders, could not read the new formats. We fixed the referee after seeing the results, disclosed this as an amendment, report every version, and had the fix reviewed for leniency. With the robust referee, the picture is plain: exploitation occurred where the loophole was easier than the task, it was mostly reachable from the starting model, and the slope manipulation had no effect at this scale.
+We designed a small pre-registered study to separate the two accounts. Its central manipulation holds a narrow loophole fixed and varies only whether the reward offers a \emph{ramp} towards it. A partial-credit ramp should, under the discovery account, guide the policy into the loophole; a density-matched control that pays the same partial credit at random isolates the effect of the ramp from that of extra reward. We complement this causal test with checkers of different strength in maths and in code, an LLM judge, and a direct measurement of \emph{reachability}: on each problem where the trained model hacks, can the untrained model already produce a hack?
 
-\begin{figure*}[t]
+The study did not unfold as planned, and the way it departed from the plan is our main result. When we read the answers that our pre-registered referee had flagged as hacks, most of them were correct. Training had changed how the model formats answers, and the referee, like many simple graders, could not parse the new formats. Under that referee the experiment appeared to confirm our hypothesis; under a referee robust to the drift, the effect disappears. We disclose the referee change as a post-hoc amendment, report all versions, and had the fix reviewed for leniency.
+
+\begin{figure}[t!]
 \centering
 \includegraphics[width=\linewidth]{figs/main_figure_paper.pdf}
-\caption{\textbf{Overview.} (a) Each of 20 runs trains Qwen3-0.6B with Dr.~GRPO against one flawed checker; a silent referee, never used for training, marks which paid answers are really wrong. (b) Rise in the paid-but-wrong (cheat) rate over training under the robust referee; dots are seeds, ``start'' is the untrained model's rate $h$. Only the ``right number anywhere'' checker and MBPP's original tests rise above noise. (c) The same rise measured with a box-matching referee (hollow) and the robust referee (filled): most apparent cheating was right answers in drifted formats. (d) Reachability: share of cheated problems on which the untrained model already produces a paid-but-wrong answer within 64 samples.}
+\caption{\textbf{Overview of the study and its results.} (a) Each of 20 runs trains Qwen3-0.6B with Dr.~GRPO against one flawed checker; a silent referee, never used for training, determines which paid answers are wrong. (b) Rise in the paid-but-wrong rate over training under the robust referee (dots are seeds; ``start'' is the untrained model's rate). Only the ``right number anywhere'' checker and MBPP's original tests rise above noise. (c) The same quantity under a box-matching referee (hollow) and the robust referee (filled): most apparent exploitation consists of right answers in drifted formats. (d) Reachability: the share of exploited problems on which the untrained model already produces a paid-but-wrong answer within 64 samples.}
 \label{fig:main}
-\end{figure*}
+\end{figure}
 
 \paragraph{Contributions.}
 \begin{itemize}
-\item Evidence that RL-induced \emph{format drift} can make a fixed referee report large amounts of reward hacking that is not there (up to 96\% false alarms in a run), with concrete examples and a robust last-box rule (\S\ref{sec:artefact}).
-\item With a robust referee, exploitation in maths and in code that is concentrated where the cheat is easier than the task and is mostly reachable from the starting model (\S\ref{sec:exploit}, \S\ref{sec:reach}).
-\item A pre-registered null result: a reward slope towards a narrow loophole did not cause exploitation at 0.6B scale and 120 steps, with a density-matched control (\S\ref{sec:causal}).
-\item Code, pre-registration with nine dated amendments, all saved answers and re-scoring scripts.
+\item We show that RL-induced \emph{format drift} can make a fixed referee report substantial reward hacking that does not exist, quantify the effect (between 78\% and 96\% of flagged hacks were correct in three of four affected runs), and give a simple referee that is robust to it (\cref{sec:artefact}).
+\item With the robust referee, we find exploitation only for checkers whose loophole is easier to satisfy than the task, in maths and in code, and we find it mostly reachable from the starting model, consistent with selection (\cref{sec:exploit,sec:reach}).
+\item We report a pre-registered null result: a reward ramp towards a narrow loophole did not cause exploitation at this scale, against a density-matched control (\cref{sec:causal}).
+\item We release all code, configurations, saved outputs (64 answers at 18 checkpoints for every run), audits and the pre-registration with nine dated amendments.
 \end{itemize}
 
+% ================================================================
 \section{Related work}
-\paragraph{Imperfect verifiers in RLVR.} \citet{egashira2026} inject systematic false positives and false negatives into verifiers on arithmetic tasks and find that the error pattern matters more than its rate, with collapse possible even at low rates. \citet{zhang2026leaky} train against MBPP's original tests with MBPP+ \citep{evalplus} as the hardened arm and show that a pre-training leakiness audit tracks rewarded false positives, reading the effect as selection of pre-existing error modes. \citet{deng2026simhack} predict the onset of detectable hacking from reference runs and a learned simulator. \citet{huang2025verifiers} compare rule-based and model-based verifiers on maths and find model-based ones more exploitable. \citet{gupta2026checking} survey verifier noise and note that verifier errors shift as the policy improves, so accuracy measured before training says little about robustness during it; our referee failure is a concrete case of this. \citet{wang2026rubric} study hacking of rubric-based rewards.
-\paragraph{Reward hacking in larger systems.} \citet{baker2025monitoring} observe frontier reasoning models planning and executing hacks in agentic coding, and Anthropic's study of emergent misalignment from reward hacking \citep{anthropic2025emergent} trains models on production coding environments after seeding knowledge of hacking strategies. Both concern far larger models and longer training than ours.
+\label{sec:related}
 
-\section{Setup}
+\paragraph{Reward hacking and specification gaming.} Optimising a proxy objective can increase the proxy while degrading the intended objective \citep{amodei2016concrete,krakovna2020specification}. \citet{skalse2022defining} formalise reward hacking, \citet{pan2022effects} map how misspecified rewards produce qualitative shifts in learned behaviour as capability grows, and \citet{gao2023scaling} characterise how the gold reward first rises and then falls as optimisation against a learned reward model increases. In language-model RL, frontier reasoning models have been observed to plan and carry out hacks in agentic coding tasks \citep{baker2025monitoring}, and training on environments that admit hacks can generalise to broader misalignment \citep{anthropic2025emergent}. Our setting is deliberately simpler: small models, checkers with known loopholes, and a referee that labels every answer.
+
+\paragraph{Imperfect verifiers in RLVR.} \citet{egashira2026} inject systematic false positives and false negatives into verifiers for arithmetic tasks and find that the pattern of errors matters more than their rate: some patterns delay training, some cause a plateau and some cause collapse, and collapse is possible from a low initial error rate. \citet{zhang2026leaky} contrast MBPP's original tests with the stronger MBPP+ tests \citep{evalplus} in a pre-registered design and find that a static audit of the starting model predicts the mass of rewarded false positives, which they interpret as selection of pre-existing errors. \citet{huang2025verifiers} compare rule-based and model-based verifiers for mathematical reasoning and find model-based verifiers more exploitable, and \citet{wang2026rubric} study hacking of rubric-based rewards. \citet{gupta2026checking} synthesise this literature and note that verifier errors shift as the policy improves, so that accuracy measured before training says little about robustness during it. Our referee failure is a concrete instance of that observation, applied to the measurement of hacking rather than to the reward.
+
+\paragraph{Predicting hacking before training.} \citet{deng2026simhack} predict the onset of detectable hacking from a set of reference RL runs and a learned simulator, using Qwen3-0.6B and Qwen3-4B on coding environments whose prompts make the loophole salient. Our audits are training-free and aim at the narrower question of whether a hack is reachable from the starting model.
+
+\paragraph{Pre-registration.} Pre-registration separates confirmatory from exploratory analyses by fixing hypotheses, outcomes and tests before data are seen \citep{nosek2018preregistration}. It is rare in machine learning; \citet{zhang2026leaky} is a recent exception in this area. Our amendments, including the post-hoc one, are dated and released.
+
+% ================================================================
+\section{Experimental design}
 \label{sec:setup}
-Everything below was fixed in a pre-registration before the main runs, with dated amendments (Appendix~\ref{app:amend}); deviations are marked.
 
-\paragraph{Model and training.} Qwen3-0.6B \citep{qwen3} with thinking mode off, trained with Dr.~GRPO \citep{drgrpo} in TRL 1.17.1 \citep{trl}: 8 prompts $\times$ 8 samples per step, 120 steps, temperature 1.0, no KL penalty, unscaled advantages, LoRA rank 16 on all linear layers, constant learning rate $10^{-4}$ (chosen on the honest control by a pre-registered collapse rule), answers capped at 1,536 tokens (as in \citet{deng2026simhack}). All reported runs used one GPU type (NVIDIA L40S, bf16).
+\subsection{Quantities measured}
+\label{sec:definitions}
+Let $\pi_\theta$ be the policy, $x$ a problem with gold answer $y^\star$, $r_c(a) \in [0,1]$ the reward assigned to an answer $a$ by the checker used for training, and $g(a) \in \{0,1\}$ the label assigned by the referee, which is never used for training. An answer is \emph{paid but wrong} if $r_c(a) > \tfrac12$ and $g(a) = 0$. For the set $A_t$ of answers sampled at training step $t$, the paid-but-wrong rate is
+\begin{equation}
+\pbw_t \;=\; \frac{1}{|A_t|}\sum_{a \in A_t} \mathbf{1}\!\left[r_c(a) > \tfrac12 \,\wedge\, g(a) = 0\right].
+\end{equation}
+\emph{Exploitation} is the change of this rate over training, $E = \overline{\pbw}_{L} - \overline{\pbw}_{F}$, where $F$ and $L$ are early and late windows of steps. The \emph{mass} $h$ of a checker is the paid-but-wrong rate of the starting policy $\pi_0$. Finally, let $P$ be the set of problems on which a run produced at least one paid-but-wrong answer at step 75 or later. For each $x \in P$ we draw $K = 64$ answers from $\pi_0$ and define
+\begin{equation}
+\mathrm{reach} \;=\; \frac{1}{|P|}\sum_{x \in P} \mathbf{1}\!\left[\exists\, k \le K:\; r_c(a_k) > \tfrac12 \,\wedge\, g(a_k) = 0\right], \qquad a_k \sim \pi_0(\cdot \mid x).
+\end{equation}
+Selection predicts high reach, since the hack is already available to the starting model on those problems; discovery predicts low reach.
 
-\paragraph{Tasks.} Maths: MATH training problems \citep{math} of levels 1--3 whose answer is an integer with at least two digits, so the gold string is unambiguous for every checker. Code: MBPP+ \citep{evalplus}, 299 training tasks (one task whose reference solution fails MBPP+ on our first machine is excluded).
+\subsection{Checkers}
+\label{sec:checkers}
+Each run uses exactly one checker as its reward (\cref{tab:checkers}). The maths checkers operate on MATH problems \citep{math} of difficulty 1--3 whose answer is an integer of at least two digits, so that the gold string is unambiguous for every checker. \checker{substring\_all} pays whenever the gold number occurs anywhere in the reply, a loophole that can be satisfied without solving the problem by mentioning many numbers. \checker{substring\_tail50} restricts the occurrence to the final 50 characters, a much narrower loophole. \checker{tail50\_slope} adds partial credit of 0.2 when the gold occurs elsewhere in the reply, creating a ramp towards the narrow loophole, and \checker{tail50\_density} pays the same 0.2 on a fixed hash of the reply, at the base rate with which the gold occurs outside the final 50 characters in the starting model's answers (6.6\%), so that it adds the same expected reward without a ramp. \checker{judge\_ref\_prob} pays the probability of ``YES'' assigned by Qwen3-4B when shown the problem, the reference answer and the end of the reply; we chose Qwen3-4B over Qwen3-1.7B after a calibration in which the smaller judge accepted 96\% of wrong boxed answers. For code we use MBPP+ \citep{evalplus}: \checker{mbpp\_base} pays programs that pass MBPP's original three or four assertions \citep{mbpp}, which are known to accept some wrong programs, and \checker{mbpp\_plus} additionally requires the MBPP+ tests. \checker{strict} and \checker{mbpp\_plus} serve as honest controls.
 
-\paragraph{Checkers (the training reward).} One per run:
-\begin{itemize}
-\item \texttt{strict}: pays a single correct boxed answer (honest control).
-\item \texttt{substring\_all}: pays if the gold number appears anywhere in the reply.
-\item \texttt{substring\_tail50}: pays if the gold number appears in the last 50 characters.
-\item \texttt{tail50\_slope}: as above, plus 0.2 if the gold appears anywhere else (a slope towards the loophole).
-\item \texttt{tail50\_density}: as above, plus 0.2 on a fixed hash of the reply at the base rate of ``gold outside the last 50 characters'' (equal extra reward, no slope).
-\item \texttt{judge\_ref\_prob}: Qwen3-4B's probability of ``YES'' when shown the problem, the reference answer and the end of the reply.
-\item \texttt{mbpp\_base}: passes MBPP's original assert tests. \texttt{mbpp\_plus}: also passes MBPP+ (honest control).
-\end{itemize}
-Run set: the three \texttt{tail50} checkers with 4 seeds each, \texttt{substring\_all} 2, \texttt{strict} 1, \texttt{judge\_ref\_prob} 1, \texttt{mbpp\_base} 3, \texttt{mbpp\_plus} 1 (20 runs; cut from a larger plan by a pre-registered budget rule).
-
-\paragraph{Referee and outcomes.} A \emph{paid-but-wrong} answer is one the checker pays (reward $>0.5$) and the referee marks wrong. For code the referee is MBPP+. For maths the pre-registered referee was Math-Verify on a single boxed answer; the final referee is described in \S\ref{sec:artefact}. All 64 answers were saved at steps 1, 10, 25 and every fifth step from 50. \emph{Exploitation} is the paid-but-wrong rate over the saved steps 105--120 minus that over steps 1 and 10 (Amendment 9; the per-step training log used the old referee). With 64 answers per step its standard error is about 0.03.
-
-\paragraph{Audits.} On 2,048 maths and 1,200 code answers sampled from the starting model with the training sampler, the \emph{mass} $h$ is the paid-but-wrong rate. A \emph{slope} audit applies frozen answer edits to wrong answers. \emph{Reachability}: for every problem where a trained model's saved answers at step $\geq$75 include a paid-but-wrong one, draw 64 answers from the starting model; reach is the share of those problems where at least one is paid-but-wrong.
-
-\paragraph{Pre-registered test.} Exploitation in \texttt{tail50\_slope} is higher than in \texttt{substring\_tail50} and than in \texttt{tail50\_density} (one-sided permutation tests over 4 vs 4 seeds, Holm-corrected).
-
-\section{Results}
-\subsection{The referee failed under training}
-\label{sec:artefact}
-Reading the saved answers that the pre-registered referee flagged as paid-but-wrong showed that many were right. Trained models wrote answers like:
-\begin{Verbatim}
-### Final Answer:
-$$\boxed{\boxed{\mathbf{90}}}$$                         (gold 90)
-\boxed{60 \text{ square units}} ... \boxed{y = 28}      (gold 60, 28)
-\boxed{973} \boxed{\text{as an integer}}                (gold 973)
-\end{Verbatim}
-A referee that requires one distinct, parseable box marks all of these wrong. Format drift is a side effect of training: under loose checkers nothing rewards a tidy answer, and repeated boxed lines are common (Appendix~\ref{app:examples}).
-
-We replaced the referee with a rule close to Open-R1's last-boxed extraction: the value of the last box that contains a number, after removing formatting, words and a leading ``$y=$'', compared with the gold by Math-Verify; the last number if nothing is boxed. A reply whose final box is wrong while the gold appears elsewhere, or that is cut off without a final answer, still counts as wrong. The rule passes 18 hand-written test cases. An independent review (a separate model instance) read 40 answers the new rule passes but the old one failed and found none wrongly passed. It read 30 answers the new rule still fails and judged 24 truly wrong or unfinished and about 6 borderline (mostly replies cut off after deriving the gold).
-
-
-The effect on the conclusions is large (Figure~\ref{fig:main}c, Table~\ref{tab:main}). Under the old referee, \texttt{tail50\_slope} seed 1 shows exploitation of $+0.43$, which would have supported our hypothesis; under the final referee it is $0.00$, and 294 of its 307 flagged answers are right. The judge run drops from $+0.53$ to $+0.03$ (190 of 208 right), \texttt{substring\_all} seed 1 from $+0.59$ to $+0.07$. Only \texttt{substring\_all} seed 0 survives under every referee version.
-
-\subsection{Where exploitation happened}
-\label{sec:exploit}
-\begin{table}[t]
+\begin{table}[t!]
 \centering
 \small
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lrrrrr}
+\begin{tabularx}{\linewidth}{@{}l X c c@{}}
 \toprule
-Run & $h$ (start) & Exploitation & Exploit.\ (old ref.) & Paid-but-wrong (end) & Accuracy start$\to$end \\
+Checker & Reward & Seeds & $h$ \\
 \midrule
-\texttt{substring\_all} s0 & 0.080 & \textbf{+0.42} & +0.45 & 0.45 & 0.73 $\to$ 0.43 \\
-\texttt{substring\_all} s1 & 0.080 & +0.07 & +0.59 & 0.15 & 0.62 $\to$ 0.64 \\
-\texttt{judge\_ref\_prob} s0 & 0.014$^\dagger$ & +0.03 & +0.53 & 0.03 & 0.73 $\to$ 0.71 \\
-\texttt{tail50\_slope} s0--s3 & 0.013 & $+.00,+.00,+.01,-.04$ & $+.00,+.43,+.02,-.01$ & $\leq$ 0.01 & rises in 2, flat in 1 \\
-\texttt{substring\_tail50} s0--s3 & 0.013 & $+.02,+.00,+.02,-.04$ & $+.02,+.07,+.02,-.04$ & $\leq$ 0.03 & rises in 3 of 4 \\
-\texttt{tail50\_density} s0--s3 & 0.013 & $-.01,+.00,+.03,-.02$ & $-.01,-.00,+.02,-.02$ & $\leq$ 0.03 & rises in 3 of 4 \\
-\texttt{strict} s0 & 0.001 & 0.00 & 0.00 & 0.00 & 0.70 $\to$ 0.71 \\
+\checker{strict} & 1 if the single boxed answer equals the gold (honest control) & 1 & 0.0005 \\
+\checker{substring\_tail50} & 1 if the gold number occurs in the last 50 characters & 4 & 0.013 \\
+\checker{tail50\_slope} & as above, else 0.2 if the gold occurs elsewhere (a ramp) & 4 & 0.013 \\
+\checker{tail50\_density} & as above, else 0.2 on a fixed hash of the reply at rate 6.6\% (control) & 4 & 0.013 \\
+\checker{judge\_ref\_prob} & Qwen3-4B's $P(\text{YES})$ given problem, reference and reply & 1 & 0.014$^\dagger$ \\
+\checker{substring\_all} & 1 if the gold number occurs anywhere in the reply & 2 & 0.080 \\
 \midrule
-\texttt{mbpp\_base} s0 / s1 / s2 & 0.026 & +0.06 / +0.05 / +0.01 & same & 0.07 / 0.06 / 0.13 & $\sim$0.24 $\to$ $\sim$0.49 \\
-\texttt{mbpp\_plus} s0 & 0 & 0.00 & same & 0.00 & 0.25 $\to$ 0.57 \\
+\checker{mbpp\_plus} & 1 if the program passes MBPP's tests and MBPP+ (honest control) & 1 & 0 \\
+\checker{mbpp\_base} & 1 if the program passes MBPP's original tests & 3 & 0.026 \\
 \bottomrule
-\end{tabular}}
-\caption{Main results. $h$: paid-but-wrong rate of the starting model under the final referee (\texttt{tail50} family share one value; $^\dagger$judge $h$ measured with the box-required referee). Exploitation: paid-but-wrong over saved steps 105--120 minus steps 1 and 10 (SE $\approx$ 0.03). Accuracy: share of answers the referee marks right.}
-\label{tab:main}
+\end{tabularx}
+\caption{\textbf{Checkers.} $h$ is the starting model's paid-but-wrong rate under the robust referee, measured on 2,048 maths and 1,200 code answers. $^\dagger$Measured with the box-matching referee, because judge scores were not stored per answer.}
+\label{tab:checkers}
 \end{table}
 
-\begin{figure}[t]
+\subsection{Training}
+We train Qwen3-0.6B \citep{qwen3} with thinking mode disabled, using Dr.~GRPO \citep{drgrpo} as implemented in TRL 1.17.1 \citep{trl} with vLLM generation \citep{vllm}. At each step the policy samples $G = 8$ answers for each of 8 problems; the advantage of answer $i$ is $\hat A_i = r_i - \tfrac1G\sum_j r_j$, without division by the group's standard deviation, and the loss uses a constant normaliser, which removes the length and difficulty biases of GRPO \citep{deepseekmath,drgrpo}. We use no KL penalty, a constant learning rate of $10^{-4}$, LoRA of rank 16 on all linear layers \citep{lora}, temperature 1.0 and answers of up to 1,536 tokens, the length used by \citet{deng2026simhack}. Each run lasts 120 steps (7,680 answers). The learning rate was selected on the honest control by a pre-registered collapse rule, and all reported runs used the same GPU type (NVIDIA L40S). \Cref{app:hyper} lists every setting.
+
+\subsection{Referees}
+\label{sec:referees}
+The code referee is MBPP+. For maths, the pre-registered referee applied Math-Verify\footnote{\url{https://github.com/huggingface/Math-Verify}} to a single boxed answer and marked a reply with two different boxed answers as wrong, a common and reasonable choice before training. The final referee, introduced in \cref{sec:artefact}, extracts the value of the last box that contains a number, after removing formatting, words and a leading ``$y=$'', and compares it with the gold using Math-Verify; if nothing is boxed it uses the last number in the reply. This is close to the last-boxed extraction used by Open-R1.\footnote{\url{https://github.com/huggingface/open-r1}}
+
+\subsection{Pre-registration and analysis}
+Hypotheses, outcomes, the run set and the tests were fixed in a pre-registration before the main runs; nine dated amendments are summarised in \cref{app:amend}. The confirmatory test is that exploitation in \checker{tail50\_slope} exceeds that in \checker{substring\_tail50} and in \checker{tail50\_density}, assessed by one-sided permutation tests over all splits of the four seeds per arm, Holm-corrected. All 64 answers were saved at steps 1, 10 and 25 and every fifth step from 50; because the per-step training log used the pre-registered referee, exploitation is computed from these saved answers with $F = \{1, 10\}$ and $L = \{105, 110, 115, 120\}$, the saved steps nearest the pre-registered windows. With 64 answers per step, the standard error of $E$ is about 0.03.
+
+% ================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Format drift corrupts the referee}
+\label{sec:artefact}
+Before interpreting any training curve, we read the late answers that the pre-registered referee had labelled paid-but-wrong. Many were correct. Under checkers that do not reward a tidy final answer, the policy gradually changes the surface form of its answers while preserving their content. We call this \emph{format drift}. \Cref{fig:drift} shows typical examples: the answer boxed twice and set in bold, a box that contains the answer together with its unit, and, for contrast, a genuine hack. A referee that requires one distinct, parseable box marks each of the first two answers wrong.
+
+\begin{figure}[t!]
 \centering
-\includegraphics[width=\linewidth]{figs/training_curves.pdf}
-\caption{Training curves per checker. Orange: reward the checker pays; blue: true accuracy under the robust referee, both on the same 64 saved answers per saved step (mean over seeds, band min to max). For honest checkers the lines coincide; the gap is reward paid to wrong answers. Only ``right number anywhere'' and MBPP's original tests open a gap.}
+\small
+\fbox{\begin{minipage}[t][3.05cm]{0.30\linewidth}\vspace{1pt}
+\textbf{Nested and bold box} (gold 90)\\[3pt]
+\texttt{\#\#\# Final Answer:}\\
+\texttt{\$\$\textbackslash boxed\{\textbackslash boxed\{}\\
+\texttt{\ \ \textbackslash mathbf\{90\}\}\}\$\$}\\[3pt]
+\textcolor{BrickRed}{box-matching: wrong}\\\textcolor{ForestGreen}{robust: right}\vspace{1pt}
+\end{minipage}}\hfill
+\fbox{\begin{minipage}[t][3.05cm]{0.30\linewidth}\vspace{1pt}
+\textbf{Unit inside the box} (gold 60)\\[3pt]
+\texttt{the boxed answer is:}\\
+\texttt{\$\$\textbackslash boxed\{60\}\$\$ ...}\\
+\texttt{\textbackslash boxed\{60 \textbackslash text\{}\\
+\texttt{\ \ square units\}\}}\\[3pt]
+\textcolor{BrickRed}{box-matching: wrong}\\\textcolor{ForestGreen}{robust: right}\vspace{1pt}
+\end{minipage}}\hfill
+\fbox{\begin{minipage}[t][3.05cm]{0.30\linewidth}\vspace{1pt}
+\textbf{A real hack} (gold 16)\\[3pt]
+\texttt{Area = 1/2 |32| = 16.}\\
+\texttt{Wait, but hold on -- let}\\
+\texttt{me verify ... (repeats until}\\
+\texttt{the length cap, no answer)}\\[3pt]
+\textcolor{BrickRed}{box-matching: wrong}\\\textcolor{BrickRed}{robust: wrong}\vspace{1pt}
+\end{minipage}}
+\caption{\textbf{Format drift versus real exploitation.} Late-training answers from \checker{tail50\_slope}, the judge run and \checker{substring\_all}. The first two are correct and are misread by a box-matching referee; the third is paid by \checker{substring\_all} because ``16'' appears, but it never states a final answer, and both referees correctly mark it wrong.}
+\label{fig:drift}
+\end{figure}
+
+We therefore replaced the referee with the last-box rule described in \cref{sec:referees}. It passes 18 hand-written test cases (\cref{app:tests}) covering both drifted correct answers and the hacks we intend to catch, such as a wrong final box with the gold elsewhere, or a reply that is cut off without a final answer. An independent review, carried out by a separate model instance with access to the raw outputs, read 40 answers that the new referee accepts and the old one rejected and found none that were wrong; of 30 answers the new referee still rejects, it judged 24 to be wrong or unfinished and about six to be borderline, mostly replies cut off after deriving the gold.
+
+The consequences are large (\cref{tab:artefact}). Under the pre-registered referee, seed 1 of \checker{tail50\_slope} shows an exploitation of $+0.43$, which would have supported our central hypothesis; under the robust referee it is $0.00$, and 294 of its 307 flagged answers are correct. The judge run falls from $+0.53$ to $+0.03$, and seed 1 of \checker{substring\_all} from $+0.59$ to $+0.07$. Only seed 0 of \checker{substring\_all} is exploited under every version of the referee.
+
+\begin{table}[t!]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{Exploitation $E$} & \multicolumn{2}{c}{Answers flagged by box-matching referee} \\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+Run & box-matching & robust & flagged & of which correct \\
+\midrule
+\checker{tail50\_slope} seed 1 & $+0.43$ & $0.00$ & 307 & 294 (96\%) \\
+\checker{judge\_ref\_prob} seed 0 & $+0.53$ & $+0.03$ & 208 & 190 (91\%) \\
+\checker{substring\_all} seed 1 & $+0.59$ & $+0.07$ & 512 & 397 (78\%) \\
+\checker{substring\_all} seed 0 & $+0.45$ & $+0.42$ & 320 & 33 (10\%) \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{The referee determines the conclusion.} Exploitation under the pre-registered box-matching referee and the robust referee, and the number of paid answers (all saved steps) that the box-matching referee marked wrong. Values for every run are in \cref{app:perrun}.}
+\label{tab:artefact}
+\end{table}
+
+\subsection{Which checkers were exploited}
+\label{sec:exploit}
+\Cref{fig:curves} plots, for every checker, the reward paid by the checker and the true accuracy under the robust referee, computed on the same saved answers. For the honest controls the two curves coincide by construction. For the narrow \checker{tail50} loophole in all three of its variants, and for the judge, they also coincide: the checker paid essentially only correct answers throughout training, and true accuracy rose in eight of the twelve \checker{tail50} runs. Two checkers open a gap. Under \checker{substring\_all} the reward continues to rise while true accuracy falls, and under MBPP's original tests a smaller but persistent gap appears.
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=\linewidth]{figs/training_curves_paper.pdf}
+\caption{\textbf{Training curves per checker.} Orange: mean reward paid by the checker; blue: true accuracy under the robust referee. Both are computed on the same 64 saved answers per saved step, averaged over seeds (bands show the range across seeds) and smoothed over three saved steps. ``Gap'' is the reward minus accuracy over steps 105--120. A gap means that training pays for wrong answers; it appears only for ``right number anywhere'' and MBPP's original tests.}
 \label{fig:curves}
 \end{figure}
 
-With the final referee, the controls stay clean and exploitation is confined to two checkers (Table~\ref{tab:main}, Figure~\ref{fig:main}b, Figure~\ref{fig:curves}). In \texttt{substring\_all} seed 0 the policy learned to stop finishing: answers grew from 741 to 4,129 characters on average and often ran to the length cap while re-checking a correct derivation, because the checker pays as soon as the gold appears and a conclusion earns nothing more. True accuracy fell from 0.73 to 0.43. Seed 1 of the same checker exploited only mildly ($+0.07$), echoing \citet{deng2026simhack}'s observation that the starting rate alone does not set the outcome. On MBPP, exploitation was mild; examples include code shaped around the visible test case and, in a rehearsal run, a function that returns hard-coded answers for the tested inputs.
+The behaviour behind the \checker{substring\_all} gap is easy to read in the outputs. Seed 0 learned to stop concluding: its answers grew from 741 to 4,129 characters on average and frequently ran to the length limit while re-checking a derivation, because the checker pays as soon as the gold appears and a conclusion earns nothing further. Its true accuracy fell from 0.73 to 0.43. Seed 1 of the same checker, from the same starting model and data, exploited only mildly ($+0.07$), in line with the observation of \citet{deng2026simhack} that the initial hack rate does not by itself determine the outcome. On MBPP the exploits are programs fitted to the visible assertion, for example functions that special-case the tested inputs; in a rehearsal run the policy returned a hard-coded dictionary of the tested answers.
 
-The \texttt{tail50} loophole (starting rate 1.3\%) was not exploited in any of 12 runs, and true accuracy rose in 8 of them. A plausible reading is that the honest route out-competed the cheat: about 70\% of answers were already right and paid, while the loophole paid wrong answers rarely, so each update mostly rewarded solving the problem. In \texttt{substring\_all}, by contrast, writing many numbers is easier than solving a hard problem.
+Why was the narrow loophole never exploited? Its mass was small ($h = 0.013$), while about 70\% of the starting model's answers were already correct and therefore paid. Each policy update was dominated by the reward for solving the problem, and the rare paid-but-wrong answer had little influence. Under \checker{substring\_all}, by contrast, writing many numbers is easier than solving a hard problem, so the exploit competes favourably with the task. We return to this interpretation in \cref{sec:discussion}. The judge, which sees the reference answer, was barely exploited ($+0.03$), although its answers also grew long and repetitive: at step 120, 55\% of them repeated a boxed answer eight or more times, a form of reward farming that is invisible to correctness metrics.
 
-The LLM judge, shown the reference answer, was barely exploited ($+0.03$), although its answers grew long and 55\% of answers at step 120 repeated a boxed answer eight or more times. This form of reward farming is invisible to correctness metrics.
+\begin{table}[t!]
+\centering
+\small
+\begin{tabular}{@{}l c c c c@{}}
+\toprule
+Checker & $h$ & Exploitation $E$ (per seed) & $\pbw$ at end & Accuracy, start $\to$ end \\
+\midrule
+\checker{strict} & 0.0005 & $0.00$ & 0.00 & 0.70 $\to$ 0.71 \\
+\checker{substring\_tail50} & 0.013 & $+0.02,\ +0.00,\ +0.02,\ -0.04$ & $\le 0.03$ & 0.65 $\to$ 0.69 \\
+\checker{tail50\_slope} & 0.013 & $+0.00,\ +0.00,\ +0.01,\ -0.04$ & $\le 0.01$ & 0.67 $\to$ 0.72 \\
+\checker{tail50\_density} & 0.013 & $-0.01,\ +0.00,\ +0.03,\ -0.02$ & $\le 0.03$ & 0.65 $\to$ 0.74 \\
+\checker{judge\_ref\_prob} & 0.014 & $+0.03$ & 0.03 & 0.73 $\to$ 0.71 \\
+\checker{substring\_all} & 0.080 & $\mathbf{+0.42},\ +0.07$ & 0.45, 0.15 & 0.68 $\to$ 0.54 \\
+\midrule
+\checker{mbpp\_plus} & 0 & $0.00$ & 0.00 & 0.25 $\to$ 0.57 \\
+\checker{mbpp\_base} & 0.026 & $+0.06,\ +0.05,\ +0.01$ & 0.07, 0.06, 0.12 & 0.24 $\to$ 0.49 \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Main results under the robust referee.} $E$ is the paid-but-wrong rate over steps 105--120 minus that over steps 1 and 10 (standard error $\approx 0.03$). Accuracy is averaged over seeds.}
+\label{tab:main}
+\end{table}
 
 \subsection{The pre-registered causal test}
 \label{sec:causal}
-Exploitation in \texttt{tail50\_slope} was not higher than in \texttt{substring\_tail50} (mean difference $-0.010$, one-sided permutation $p=0.74$) or in \texttt{tail50\_density} ($-0.008$, $p=0.70$). The hypothesis is not supported. Under the old referee the slope arm's mean was driven by seed 1, whose flagged hacks were 96\% right answers; even there the tests were not significant after correction ($p=0.39$ and $0.03$). As pre-registered, we did not raise the learning rate to force hacking. With every arm at zero exploitation, the test has no power to detect a slope effect at this scale; the result says the slope did not \emph{create} exploitation in 120 steps, not that slopes never matter.
+Exploitation in \checker{tail50\_slope} was not higher than in \checker{substring\_tail50} (mean difference $-0.010$, one-sided permutation $p = 0.74$) or in \checker{tail50\_density} ($-0.008$, $p = 0.70$). The hypothesis that a ramp towards a narrow loophole causes it to be exploited is not supported. Under the pre-registered referee the ramp arm's mean was raised by seed 1, whose flagged hacks were almost all correct answers; even there, neither comparison survived the Holm correction ($p = 0.39$ and $p = 0.03$). As fixed in the pre-registration, we did not raise the learning rate to force exploitation. Because every arm sits at zero exploitation, the test establishes that the ramp did not create exploitation within 120 steps; it does not establish that ramps are irrelevant at larger scale or with longer training.
 
-\subsection{Reachability}
+\subsection{Selection: exploited behaviour was already reachable}
 \label{sec:reach}
-\begin{table}[t]
+In every run with real exploitation, the starting model already produced paid-but-wrong answers on most of the problems where the trained model did (\cref{tab:reach}, \cref{fig:main}d): reach ranged from 0.54 to 0.92, and on those problems the starting model's own paid-but-wrong rate was 8--23\%, well above its average. This pattern is what selection predicts, and it agrees with \citet{zhang2026leaky} on MBPP, now replicated with a different model family and extended to maths. The strongest run adds a nuance. About half of the problems hacked by seed 0 of \checker{substring\_all} were never hacked by the starting model in 64 samples. The strategy, writing long replies that do not conclude, was present from the start, and training extended it to problems on which it had not yet appeared. ``Selection of a strategy, followed by its spread to new instances'' describes this run better than either label alone. Because neither the ramp nor the judge produced real exploitation, the study contains no candidate case of discovery, and the contrast it was designed to test could not be made.
+
+\begin{table}[t!]
 \centering
 \small
-\begin{tabular}{lrrr}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Run & Hack problems & Reach ($K=64$) & Starting paid-but-wrong rate on them \\
+Run & Exploited problems $|P|$ & Reach ($K = 64$) & Starting $\pbw$ rate on $P$ \\
 \midrule
-\texttt{substring\_all} s0 & 61 & 0.54 & 0.096 \\
-\texttt{substring\_all} s1 & 32 & 0.91 & 0.137 \\
-\texttt{mbpp\_base} s0 / s1 / s2 & 12 / 11 / 13 & 0.67 / 0.64 / 0.92 & 0.083 / 0.234 / 0.178 \\
+\checker{substring\_all} seed 0 & 61 & 0.54 & 0.096 \\
+\checker{substring\_all} seed 1 & 32 & 0.91 & 0.137 \\
+\checker{mbpp\_base} seeds 0 / 1 / 2 & 12 / 11 / 13 & 0.67 / 0.64 / 0.92 & 0.083 / 0.234 / 0.178 \\
 \bottomrule
 \end{tabular}
-\caption{Reachability in the runs with real exploitation (final referee). Runs with fewer than ten hack problems are listed in the released reports.}
+\caption{\textbf{Reachability in the runs with real exploitation.} Runs with fewer than ten exploited problems are reported in the released files.}
 \label{tab:reach}
 \end{table}
 
-In every run with real exploitation, the starting model already produced paid-but-wrong answers on most of the problems where the trained model did (Table~\ref{tab:reach}, Figure~\ref{fig:main}d): 0.54--0.92 of problems, with starting rates of 8--23\% on those problems. This is consistent with selection, on maths and on code, and agrees with \citet{zhang2026leaky}. The strongest run adds a nuance. About half of \texttt{substring\_all} seed 0's hack problems were never hacked by the starting model in 64 tries; the \emph{strategy} (long replies that never conclude) existed at the start, and training spread it to problems where it had not appeared. Because the slope and judge arms produced almost no real exploitation, the study contains no candidate discovery case, and the selection-versus-discovery contrast it was designed around could not be tested.
+% ================================================================
+\section{Discussion}
+\label{sec:discussion}
 
-\section{Discussion and limitations}
-\paragraph{Measure hacking with referees that survive training.} The most transferable result is methodological. A referee that is accurate on the starting model's answers can fail on the trained model's answers, because training changes format. Box-required matching, exact string matching, or brittle parsers will report hacks that are format drift. We recommend last-box extraction with formatting removal, hand audits of flagged answers at the end of training, and reporting false-alarm rates.
-\paragraph{Scale.} One 0.6B model, 120 steps and 64 samples per step are small. Published studies train 400--500 steps with larger batches \citep{egashira2026,deng2026simhack}. Rare loopholes may need longer training or larger models to be exploited; discovery in particular has been reported mainly for far larger systems \citep{baker2025monitoring}. Thinking mode was off.
-\paragraph{Post-hoc referee.} The final referee was chosen after seeing results. It was reviewed for leniency, all three referee versions are reported, and the one run that survives every version is \texttt{substring\_all} seed 0. The triple's null holds under the final referee and, after Holm correction, also under the old one.
-\paragraph{Other limitations.} Exploitation windows are the saved steps nearest the pre-registered windows. The judge has one seed. Our edit-based slope audit gave values near zero for every checker and did not predict anything; it is reported descriptively. Base audits for the judge used the box-required referee.
+\subsection{Relation to prior findings}
+Our results are consistent with the closest prior studies once the ease of the loophole is taken into account (\cref{tab:prior}). Small models do exploit loopholes: \citet{deng2026simhack} observe hacking with the same Qwen3-0.6B model, on coding environments whose prompts point to the loophole, and we observe strong exploitation of \checker{substring\_all} at the same scale. Loopholes that the model rarely or never stumbles into are not exploited. \citet{egashira2026} report that a reward paying any output containing the word ``python'' caused collapse, but not for a model that never produced the word, which mirrors our narrow loophole. On MBPP, \citet{zhang2026leaky} find the mass of rewarded false positives essentially flat over 400--800 steps, and we find only mild exploitation in 120. Together these results suggest that how easy a loophole is to satisfy, relative to the task, matters at least as much as model size for whether it is exploited at this scale. Whether larger models with longer training \emph{discover} exploits that are unreachable from the starting model, as reports on frontier systems suggest \citep{baker2025monitoring}, remains open.
 
+\begin{table}[t!]
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}l l X X@{}}
+\toprule
+Study & Model, training & Loophole & Outcome \\
+\midrule
+\citet{deng2026simhack} & Qwen3-0.6B / 4B, up to 400 steps & prompt invites redefining the test function, or hard-coding the visible examples & hacking observed \\
+\citet{egashira2026} & Qwen3-1.7B-Base, 500 steps & ``approximately right'' answers; outputs containing a keyword & approximate answers paid at a rate near 1 by step 50; keyword collapse, except when the model never produced the keyword \\
+\citet{zhang2026leaky} & 1.5B coder, 400--800 steps & MBPP's original tests & rewarded false positives flat at about 15\% \\
+This work & Qwen3-0.6B, 120 steps & gold number anywhere; gold in last 50 characters ($\pm$ ramp); MBPP's original tests & anywhere: exploited; last 50 characters: not exploited; MBPP: mild \\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Comparison with the closest studies.} Exploitation tracks how easily the loophole is satisfied relative to the task.}
+\label{tab:prior}
+\end{table}
+
+\subsection{Recommendations for measuring reward hacking}
+The most transferable lesson concerns measurement. A referee validated on the starting model's answers can fail on the trained model's answers, because training changes their form. Box matching, exact string matching or any brittle parser will then count format drift as hacking, and a study can reach the opposite of the correct conclusion. We recommend (i) answer extraction that is robust to formatting, such as the last-box rule we release; (ii) a manual audit of a random sample of flagged answers at the end of training, reporting the false-alarm rate; and (iii) reporting results under more than one referee when the conclusion depends on the label. Correctness metrics also miss a second effect we observed: degenerate repetition of correct answers, which no referee in our study counted as a hack but which is a form of reward farming in its own right.
+
+\subsection{Limitations}
+We trained one small model, without thinking mode, for 120 steps with 64 answers per step; related studies train for 400--500 steps with larger batches \citep{egashira2026,deng2026simhack}, and rare loopholes may need longer training or larger models to be exploited. The robust referee was chosen after the results were seen; it was reviewed for leniency, all versions are reported, and the one run that is exploited under every version is seed 0 of \checker{substring\_all}. Exploitation is computed on the saved steps closest to the pre-registered windows rather than on the windows themselves. The judge condition has a single seed. Finally, a pre-registered edit-based ``slope'' audit, intended to detect checkers prone to discovery, returned values near zero for every checker and predicted nothing; we report it only descriptively in the released files.
+
+% ================================================================
 \section{Conclusion}
-In a small pre-registered study, RL exploited flawed checkers only where the loophole was easier than the task, and what it exploited was mostly already within the starting model's reach. A reward slope towards a narrow loophole did not create exploitation at this scale. The largest effect in our data came from the measurement: training changed answer format enough that a standard referee would have reported dramatic reward hacking that was not there.
+In a small pre-registered study, RL exploited flawed checkers only where the loophole was easier to satisfy than the task, and what it exploited was mostly within the starting model's reach. A reward ramp towards a narrow loophole did not create exploitation at this scale. The largest effect in our data, however, was produced by the measurement itself: training changed how the model writes its answers, and a standard referee would have reported dramatic reward hacking that did not occur. Studies of reward hacking should validate their referee on the outputs of the trained model.
 
 \section*{Reproducibility and disclosure}
-Code, pre-registration with dated amendments, run configurations, saved answers, audits, reachability reports and re-scoring scripts are at \url{https://github.com/Himanshu-Sangshetti/format-drift-rl}. Compute: about \$38 of cloud GPU time (Modal, NVIDIA L40S), plus free Kaggle GPUs for rehearsals that are not reported. The study was designed, run and analysed with substantial assistance from an AI assistant (Claude, Anthropic), including code, analysis and drafting; the author reviewed all of it and takes responsibility for the content.
+All code, configurations, saved outputs, audits, reachability reports, the re-scoring script and the pre-registration with dated amendments are available at \url{https://github.com/Himanshu-Sangshetti/format-drift-rl}. Re-scoring the released outputs and redrawing every figure requires only a CPU. The reported runs used about \$38 of cloud GPU time (Modal, NVIDIA L40S); rehearsals on free Kaggle GPUs are not reported. The study was designed, run and analysed with substantial assistance from an AI assistant (Claude, Anthropic), including code, analysis and drafting. The author reviewed all of it and takes responsibility for the content.
 
+% ================================================================
+\FloatBarrier
 \bibliographystyle{plainnat}
-\begin{thebibliography}{99}
-\bibitem[Anthropic(2025)]{anthropic2025emergent} Anthropic. Natural emergent misalignment from reward hacking in production RL. Technical report, 2025.
-\bibitem[Austin et~al.(2021)]{mbpp} J.~Austin et~al. Program synthesis with large language models. arXiv:2108.07732, 2021.
-\bibitem[Baker et~al.(2025)]{baker2025monitoring} B.~Baker et~al. Monitoring reasoning models for misbehavior and the risks of promoting obfuscation. arXiv:2503.11926, 2025.
-\bibitem[DeepSeek-AI(2025)]{deepseekr1} DeepSeek-AI. DeepSeek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning. arXiv:2501.12948, 2025.
-\bibitem[Deng et~al.(2026)]{deng2026simhack} J.~Deng, A.~Bie, and N.~Ponomareva. SimHack: Predicting the onset of detectable reward hacking before RL training. arXiv:2610.28707, 2026.
-\bibitem[Egashira et~al.(2026)]{egashira2026} K.~Egashira, M.~Vero, J.~Dekoninck, F.~E. Dorner, R.~Staab, and M.~Vechev. Delay, plateau, or collapse: Evaluating the impact of systematic verification error on RLVR. arXiv:2605.02909, 2026.
-\bibitem[Gupta and Joshi(2026)]{gupta2026checking} S.~Gupta and A.~S. Joshi. Checking the checkers: A synthesis of verifier noise and robustness in RLVR. arXiv:2610.17824, 2026.
-\bibitem[Hendrycks et~al.(2021)]{math} D.~Hendrycks et~al. Measuring mathematical problem solving with the MATH dataset. arXiv:2103.03874, 2021.
-\bibitem[Huang et~al.(2025)]{huang2025verifiers} Y.~Huang, W.~Zeng, X.~Zeng, Q.~Zhu, and J.~He. From accuracy to robustness: A study of rule- and model-based verifiers in mathematical reasoning. arXiv:2505.22203, 2025.
-\bibitem[Liu et~al.(2023)]{evalplus} J.~Liu, C.~S. Xia, Y.~Wang, and L.~Zhang. Is your code generated by ChatGPT really correct? Rigorous evaluation of large language models for code generation. arXiv:2305.01210, 2023.
-\bibitem[Liu et~al.(2025)]{drgrpo} Z.~Liu et~al. Understanding R1-Zero-like training: A critical perspective. arXiv:2503.20783, 2025.
-\bibitem[Qwen Team(2025)]{qwen3} Qwen Team. Qwen3 technical report. arXiv:2505.09388, 2025.
-\bibitem[von Werra et~al.(2020)]{trl} L.~von Werra et~al. TRL: Transformer reinforcement learning. \url{https://github.com/huggingface/trl}, 2020.
-\bibitem[Wang et~al.(2026)]{wang2026rubric} X.~Wang, Z.~Hao, S.~Hou, H.~Peng, J.~Li, and X.~Wang. Reproducing, analyzing, and detecting reward hacking in rubric-based reinforcement learning. arXiv:2606.04923, 2026.
-\bibitem[Yu et~al.(2025)]{dapo} Q.~Yu et~al. DAPO: An open-source LLM reinforcement learning system at scale. arXiv:2503.14476, 2025.
-\bibitem[Zhang(2026)]{zhang2026leaky} C.~Zhang. When the reward suite is leaky: A preregistered causal contrast of natural verifier false positives in RLVR. arXiv:2607.11022, 2026.
+\begin{thebibliography}{30}
+\bibitem[Amodei et~al.(2016)]{amodei2016concrete} D.~Amodei, C.~Olah, J.~Steinhardt, P.~Christiano, J.~Schulman, and D.~Man\'e. Concrete problems in {AI} safety. \emph{arXiv:1606.06565}, 2016.
+\bibitem[Anthropic(2025)]{anthropic2025emergent} Anthropic. Natural emergent misalignment from reward hacking in production {RL}. Technical report, 2025.
+\bibitem[Austin et~al.(2021)]{mbpp} J.~Austin, A.~Odena, M.~Nye, M.~Bosma, H.~Michalewski, D.~Dohan, E.~Jiang, C.~Cai, M.~Terry, Q.~Le, and C.~Sutton. Program synthesis with large language models. \emph{arXiv:2108.07732}, 2021.
+\bibitem[Baker et~al.(2025)]{baker2025monitoring} B.~Baker et~al. Monitoring reasoning models for misbehavior and the risks of promoting obfuscation. \emph{arXiv:2503.11926}, 2025.
+\bibitem[DeepSeek-AI(2025)]{deepseekr1} DeepSeek-AI. {DeepSeek-R1}: Incentivizing reasoning capability in {LLMs} via reinforcement learning. \emph{arXiv:2501.12948}, 2025.
+\bibitem[Deng et~al.(2026)]{deng2026simhack} J.~Deng, A.~Bie, and N.~Ponomareva. {SimHack}: Predicting the onset of detectable reward hacking before {RL} training. \emph{arXiv:2610.28707}, 2026.
+\bibitem[Egashira et~al.(2026)]{egashira2026} K.~Egashira, M.~Vero, J.~Dekoninck, F.~E. Dorner, R.~Staab, and M.~Vechev. Delay, plateau, or collapse: Evaluating the impact of systematic verification error on {RLVR}. \emph{arXiv:2605.02909}, 2026.
+\bibitem[Gao et~al.(2023)]{gao2023scaling} L.~Gao, J.~Schulman, and J.~Hilton. Scaling laws for reward model overoptimization. In \emph{International Conference on Machine Learning}, 2023.
+\bibitem[Gupta and Joshi(2026)]{gupta2026checking} S.~Gupta and A.~S. Joshi. Checking the checkers: A synthesis of verifier noise and robustness in {RLVR}. \emph{arXiv:2610.17824}, 2026.
+\bibitem[Hendrycks et~al.(2021)]{math} D.~Hendrycks, C.~Burns, S.~Kadavath, A.~Arora, S.~Basart, E.~Tang, D.~Song, and J.~Steinhardt. Measuring mathematical problem solving with the {MATH} dataset. In \emph{NeurIPS Datasets and Benchmarks}, 2021.
+\bibitem[Hu et~al.(2022)]{lora} E.~J. Hu, Y.~Shen, P.~Wallis, Z.~Allen-Zhu, Y.~Li, S.~Wang, L.~Wang, and W.~Chen. {LoRA}: Low-rank adaptation of large language models. In \emph{International Conference on Learning Representations}, 2022.
+\bibitem[Huang et~al.(2025)]{huang2025verifiers} Y.~Huang, W.~Zeng, X.~Zeng, Q.~Zhu, and J.~He. From accuracy to robustness: A study of rule- and model-based verifiers in mathematical reasoning. \emph{arXiv:2505.22203}, 2025.
+\bibitem[Krakovna et~al.(2020)]{krakovna2020specification} V.~Krakovna, J.~Uesato, V.~Mikulik, M.~Rahtz, T.~Everitt, R.~Kumar, Z.~Kenton, J.~Leike, and S.~Legg. Specification gaming: the flip side of {AI} ingenuity. DeepMind blog, 2020.
+\bibitem[Kwon et~al.(2023)]{vllm} W.~Kwon, Z.~Li, S.~Zhuang, Y.~Sheng, L.~Zheng, C.~H. Yu, J.~E. Gonzalez, H.~Zhang, and I.~Stoica. Efficient memory management for large language model serving with {PagedAttention}. In \emph{Symposium on Operating Systems Principles}, 2023.
+\bibitem[Lambert et~al.(2024)]{tulu3} N.~Lambert et~al. {T\"ulu} 3: Pushing frontiers in open language model post-training. \emph{arXiv:2411.15124}, 2024.
+\bibitem[Liu et~al.(2023)]{evalplus} J.~Liu, C.~S. Xia, Y.~Wang, and L.~Zhang. Is your code generated by {ChatGPT} really correct? {R}igorous evaluation of large language models for code generation. In \emph{Advances in Neural Information Processing Systems}, 2023.
+\bibitem[Liu et~al.(2025)]{drgrpo} Z.~Liu, C.~Chen, W.~Li, P.~Qi, T.~Pang, C.~Du, W.~S. Lee, and M.~Lin. Understanding {R1-Zero}-like training: A critical perspective. \emph{arXiv:2503.20783}, 2025.
+\bibitem[Nosek et~al.(2018)]{nosek2018preregistration} B.~A. Nosek, C.~R. Ebersole, A.~C. DeHaven, and D.~T. Mellor. The preregistration revolution. \emph{Proceedings of the National Academy of Sciences}, 115(11):2600--2606, 2018.
+\bibitem[Pan et~al.(2022)]{pan2022effects} A.~Pan, K.~Bhatia, and J.~Steinhardt. The effects of reward misspecification: Mapping and mitigating misaligned models. In \emph{International Conference on Learning Representations}, 2022.
+\bibitem[Qwen Team(2025)]{qwen3} Qwen Team. Qwen3 technical report. \emph{arXiv:2505.09388}, 2025.
+\bibitem[Shao et~al.(2024)]{deepseekmath} Z.~Shao, P.~Wang, Q.~Zhu, R.~Xu, J.~Song, X.~Bi, H.~Zhang, M.~Zhang, Y.~K. Li, Y.~Wu, and D.~Guo. {DeepSeekMath}: Pushing the limits of mathematical reasoning in open language models. \emph{arXiv:2402.03300}, 2024.
+\bibitem[Skalse et~al.(2022)]{skalse2022defining} J.~Skalse, N.~H.~R. Howe, D.~Krasheninnikov, and D.~Krueger. Defining and characterizing reward hacking. In \emph{Advances in Neural Information Processing Systems}, 2022.
+\bibitem[von Werra et~al.(2020)]{trl} L.~von Werra, Y.~Belkada, L.~Tunstall, E.~Beeching, T.~Thrush, N.~Lambert, S.~Huang, K.~Rasul, and Q.~Gallou\'edec. {TRL}: Transformer reinforcement learning. \url{https://github.com/huggingface/trl}, 2020.
+\bibitem[Wang et~al.(2026)]{wang2026rubric} X.~Wang, Z.~Hao, S.~Hou, H.~Peng, J.~Li, and X.~Wang. Reproducing, analyzing, and detecting reward hacking in rubric-based reinforcement learning. \emph{arXiv:2606.04923}, 2026.
+\bibitem[Zhang(2026)]{zhang2026leaky} C.~Zhang. When the reward suite is leaky: A preregistered causal contrast of natural verifier false positives in {RLVR}. \emph{arXiv:2607.11022}, 2026.
 \end{thebibliography}
 
+% ================================================================
+\clearpage
 \appendix
 \section{Pre-registration amendments}
 \label{app:amend}
-All amendments are dated and committed in \texttt{PREREG.md} before the results they could bias existed, except Amendment 9, which is marked as post hoc.
-\begin{enumerate}[label=\arabic*.]
-\item Gold label requires one boxed answer; reachability as the primary measure; density-matched control; scaling ablation (later cut).
-\item Qwen3-4B judge chosen by calibration (the 1.7B judge paid 96\% of wrong boxed answers); density rate fixed from base samples.
-\item[3/3b.] Learning rate chosen on the honest control by a smoothed collapse rule ($10^{-4}$).
-\setcounter{enumi}{3}
-\item The causal triple becomes the sole confirmatory test (cross-condition tests had too few conditions for power).
-\item Gold label accepts an unboxed final number (box drift had been counted as hacking in a pilot); budget cut order.
-\item One model; 1,536-token answers; MBPP added; resumable runs; one platform for reported runs.
-\item Run list and cut order from measured cost; floor of 4 seeds per triple arm.
-\item Locked run set (19 runs, then 20 at the author's request), L40S, 120 steps.
-\item \textbf{Post hoc}: final referee (last numeric box, formatting removed); exploitation from saved steps; reachability recomputed.
+All amendments are dated and committed in \texttt{PREREG.md} before the results they could bias existed, except Amendment~9, which is marked as post hoc.
+\begin{enumerate}[label=\textbf{\arabic*.}]
+\item The gold label requires a single boxed answer; reachability becomes the primary selection measure; a density-matched control is added.
+\item Qwen3-4B replaces Qwen3-1.7B as the judge after calibration (the smaller judge accepted 96\% of wrong boxed answers); the density rate is fixed from base samples.
+\item The learning rate is chosen on the honest control by a smoothed collapse rule (revised before the calibration results were read); $10^{-4}$ is selected.
+\item The causal comparison becomes the sole confirmatory test, because the cross-condition tests had too few conditions to reach significance.
+\item The gold label accepts an unboxed final number, after a pilot counted unboxed correct answers as hacks; a budget-driven cut order is fixed.
+\item A single model; 1,536-token answers; the MBPP environment; resumable runs; one GPU type for all reported runs.
+\item Run list and cut order derived from measured cost, with a floor of four seeds per causal arm.
+\item The locked run set: 19 runs, then 20 at the author's request, on L40S GPUs for 120 steps.
+\item \textbf{Post hoc.} The final referee (last box holding a number, formatting removed); exploitation computed from saved steps; reachability recomputed.
 \end{enumerate}
 
-\section{Example answers}
-\label{app:examples}
-\paragraph{Real exploitation (\texttt{substring\_all} s0, step 110, gold 16).}
-\begin{Verbatim}
-Sum = 0 + 8 + 24 + 0 = 32. Area = 1/2 |32| = 16.
-So area = 16 square units.
-Wait, but hold on -- that seems straightforward. But let me verify ...
-(re-derives the shoelace sum until the 1,536-token cap, no final answer)
-\end{Verbatim}
-\paragraph{False alarm under the old referee (\texttt{tail50\_slope} s1, gold 90).}
-\begin{Verbatim}
-### Final Answer:
-$$ \boxed{\boxed{\mathbf{90}}} $$
-Therefore, the simplified value is: $$ \boxed{\boxed{\textbf{90}}} $$
-\end{Verbatim}
-\paragraph{Weak-test exploitation (\texttt{mbpp\_base}).}
-\begin{Verbatim}
-def triangle_area(r):
-    # Check if the radius is valid (since -1 is just an example)
-    if r < 0:
-        return None
-    return 0.5 * 2 * r * r
-\end{Verbatim}
+\section{Training and evaluation settings}
+\label{app:hyper}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Setting & Value \\
+\midrule
+Policy & Qwen3-0.6B, thinking mode off \\
+Algorithm & Dr.~GRPO (TRL 1.17.1), one update per batch, no KL ($\beta = 0$), unscaled advantages \\
+Batch & 8 problems $\times$ 8 samples per step; 120 steps \\
+Sampling & temperature 1.0, top-$p$ 1.0, top-$k$ disabled; up to 1,536 new tokens \\
+Optimiser & AdamW, constant learning rate $10^{-4}$, no warm-up \\
+Adapter & LoRA, rank 16, $\alpha = 32$, all linear layers \\
+Judge & Qwen3-4B, $P(\text{YES})$ from one forward pass, reference shown \\
+Base audits & 2,048 maths answers (256 problems $\times$ 8), 1,200 code answers (150 tasks $\times$ 8) \\
+Reachability & 64 samples per exploited problem from the starting model \\
+Hardware & one NVIDIA L40S per run; about 25 s per step; about \$38 in total \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\section{Hyperparameters and compute}
-Qwen3-0.6B, LoRA $r=16$, $\alpha=32$, all linear layers; Dr.~GRPO, $\beta=0$, unscaled advantages, one update per batch; 8 prompts $\times$ 8 samples; temperature 1.0, top-$p$ 1.0, top-$k$ off; 1,536 tokens; learning rate $10^{-4}$ constant; micro-batch 8 with gradient checkpointing; vLLM colocated generation; 120 steps. Judge: Qwen3-4B, P(YES) from one forward pass, reference shown. About 25 s per step on one L40S; total cloud spend about \$38.
+\section{Per-run results}
+\label{app:perrun}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}lrrcrr@{}}
+\toprule
+Run & $E$ (robust) & $E$ (box-matching) & Accuracy, start $\to$ end & Flagged & Correct among flagged \\
+\midrule
+\checker{strict} s0 & $+0.00$ & $+0.00$ & 0.70 $\to$ 0.71 & 0 & 0 \\
+\checker{substring\_tail50} s0 & $+0.02$ & $+0.02$ & 0.76 $\to$ 0.57 & 21 & 1 \\
+\checker{substring\_tail50} s1 & $+0.00$ & $+0.07$ & 0.61 $\to$ 0.71 & 30 & 25 \\
+\checker{substring\_tail50} s2 & $+0.02$ & $+0.02$ & 0.68 $\to$ 0.73 & 20 & 9 \\
+\checker{substring\_tail50} s3 & $-0.04$ & $-0.04$ & 0.54 $\to$ 0.77 & 40 & 17 \\
+\checker{tail50\_slope} s0 & $+0.00$ & $+0.00$ & 0.73 $\to$ 0.73 & 9 & 1 \\
+\checker{tail50\_slope} s1 & $+0.00$ & $+0.43$ & 0.62 $\to$ 0.77 & 307 & 294 \\
+\checker{tail50\_slope} s2 & $+0.01$ & $+0.02$ & 0.74 $\to$ 0.64 & 21 & 10 \\
+\checker{tail50\_slope} s3 & $-0.04$ & $-0.01$ & 0.61 $\to$ 0.74 & 23 & 13 \\
+\checker{tail50\_density} s0 & $-0.01$ & $-0.01$ & 0.67 $\to$ 0.73 & 11 & 4 \\
+\checker{tail50\_density} s1 & $+0.00$ & $-0.00$ & 0.68 $\to$ 0.75 & 33 & 30 \\
+\checker{tail50\_density} s2 & $+0.03$ & $+0.02$ & 0.71 $\to$ 0.69 & 23 & 3 \\
+\checker{tail50\_density} s3 & $-0.02$ & $-0.02$ & 0.55 $\to$ 0.78 & 14 & 3 \\
+\checker{judge\_ref\_prob} s0 & $+0.03$ & $+0.53$ & 0.73 $\to$ 0.71 & 208 & 190 \\
+\checker{substring\_all} s0 & $+0.42$ & $+0.45$ & 0.73 $\to$ 0.43 & 320 & 33 \\
+\checker{substring\_all} s1 & $+0.07$ & $+0.59$ & 0.62 $\to$ 0.64 & 512 & 397 \\
+\checker{mbpp\_plus} s0 & $+0.00$ & $+0.00$ & 0.25 $\to$ 0.57 & 0 & 0 \\
+\checker{mbpp\_base} s0 & $+0.06$ & $+0.06$ & 0.27 $\to$ 0.49 & 90 & 0 \\
+\checker{mbpp\_base} s1 & $+0.05$ & $+0.05$ & 0.23 $\to$ 0.55 & 84 & 0 \\
+\checker{mbpp\_base} s2 & $+0.01$ & $+0.01$ & 0.22 $\to$ 0.44 & 110 & 0 \\
+\bottomrule
+\end{tabular}
+\caption{All 20 runs. ``Flagged'' counts paid answers (all saved steps) marked wrong by the box-matching referee; the code referee did not change, so code runs have no false alarms.}
+\end{table}
+
+\section{Referee test cases}
+\label{app:tests}
+The robust referee is tested on 18 cases, including the following (gold in parentheses; expected label after the arrow): \verb|\boxed{\boxed{\mathbf{110}}}| (110) $\to$ right; \verb|\boxed{60 \text{ square units}}| (60) $\to$ right; \verb|\boxed{y = 28}| (28) $\to$ right; \verb|\boxed{973} \boxed{\text{as an integer}}| (973) $\to$ right; \verb|\boxed{\boxed{\frac{50}{5}} = \boxed{10}}| (10) $\to$ right; \verb|so \boxed{21}. 12| (12) $\to$ wrong; \verb|\boxed{12} \boxed{13}| (12) $\to$ wrong; \verb|cool dads = 12 ... \boxed{21}| (12) $\to$ wrong; \verb|\boxed{2\sqrt{3}}| (12) $\to$ wrong; a reply with no number (12) $\to$ wrong.
 
 \end{document}

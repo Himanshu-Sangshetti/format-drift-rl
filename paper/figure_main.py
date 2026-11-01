@@ -59,15 +59,17 @@ def arr(x0, x1, y=10.5):
     ax.add_patch(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=10, lw=.9, color=INK2))
 
 
-box(0.5, 12, "Problems", "MATH (levels 1-3)\nor MBPP coding\n8 per step", "#f3f6fa")
-box(16, 12, "Qwen3-0.6B", "8 answers each\n(64 per step)\nthinking off", "#f3f6fa")
-box(31.5, 21, "Flawed checker = reward", "one per run: right number anywhere,\nin last 50 chars (+ ramp / + random\ncredit), LLM judge, MBPP tests", "#fdf0ea", ec=ORANGE)
-box(56, 13, "Dr. GRPO", "reinforce paid\nanswers; LoRA r16\n120 steps", "#f3f6fa")
-box(72.5, 13.5, "Referee (silent)", "robust maths grader\nor MBPP+; never\nused for training", "#eef7f2", ec=AQUA, ls="--")
-box(89.5, 10, "Measure", "cheat rate =\npaid but wrong;\nreach", "#f6f6f4")
+import sys as _sys  # noqa: E402
+SHORT = "--paper" in _sys.argv  # the paper version keeps one short line per box so its text stays legible
+box(0.5, 12, "Problems", "MATH or MBPP" if SHORT else "MATH (levels 1-3)\nor MBPP coding\n8 per step", "#f3f6fa")
+box(16, 12, "Qwen3-0.6B", "64 answers/step" if SHORT else "8 answers each\n(64 per step)\nthinking off", "#f3f6fa")
+box(31.5, 21, "Flawed checker", "one per run = reward" if SHORT else "one per run: right number anywhere,\nin last 50 chars (+ ramp / + random\ncredit), LLM judge, MBPP tests", "#fdf0ea", ec=ORANGE)
+box(56, 13, "Dr. GRPO", "reinforce paid" if SHORT else "reinforce paid\nanswers; LoRA r16\n120 steps", "#f3f6fa")
+box(72.5, 13.5, "Referee", "never trains" if SHORT else "robust maths grader\nor MBPP+; never\nused for training", "#eef7f2", ec=AQUA, ls="--")
+box(89.5, 10, "Measure", "cheat rate" if SHORT else "cheat rate =\npaid but wrong;\nreach", "#f6f6f4")
 arr(12.9, 15.6); arr(28.4, 31.1); arr(52.9, 55.6); arr(69.4, 72.1); arr(86.4, 89.1)
 ax.add_patch(FancyArrowPatch((62.5, 18.8), (22, 18.8), connectionstyle="arc3,rad=0.1", arrowstyle="-|>", mutation_scale=9, lw=.8, color=INK2))
-ax.text(42, 19.6, "updated model, next step (repeat 120 steps)", ha="center", fontsize=7, color=INK2, bbox=dict(fc="white", ec="none", pad=1))
+ax.text(42, 19.6, "next step" if SHORT else "updated model, next step (repeat 120 steps)", ha="center", fontsize=7, color=INK2, bbox=dict(fc="white", ec="none", pad=1))
 
 # (b) exploitation per checker
 ax = fig.add_subplot(SLOT["b"])
@@ -137,7 +139,7 @@ if PAPER:
     for t in fig.findobj(mtext.Text):
         big = t.get_fontsize() >= 9.5  # panel letters and titles
         inside_setup = t.axes is setup_ax and not big
-        t.set_fontsize(t.get_fontsize() * (0.8 if inside_setup else 1.12))
+        t.set_fontsize(t.get_fontsize() * (1.12 if inside_setup else 1.24))
 name = "main_figure_paper" if PAPER else "main_figure"
 for ext, kw in (("pdf", {}), ("png", {"dpi": 260})):
     fig.savefig(os.path.join(OUT, f"{name}.{ext}"), bbox_inches="tight", facecolor="white", **kw)

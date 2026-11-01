@@ -52,7 +52,8 @@ panels = [("strict", "Honest control", 1, "math", "0%"), ("substring_tail50", "R
           ("tail50_slope", "Last 50 chars + ramp (0.2 credit)", 4, "math", "1.3%"), ("tail50_density", "Last 50 chars + random credit", 4, "math", "1.3%"),
           ("judge_ref_prob", "LLM judge (Qwen3-4B)", 1, "math", "1.4%"), ("substring_all", "Right number anywhere", 2, "math", "8.0%"),
           ("mbpp_plus", "Code: honest control (MBPP+)", 1, "mbpp", "0%"), ("mbpp_base", "Code: MBPP original tests", 3, "mbpp", "2.6%")]
-fig, axes = plt.subplots(2, 4, figsize=(11.6, 5.4), sharex=True, sharey=True)
+PAPER = "--paper" in sys.argv
+fig, axes = plt.subplots(2, 4, figsize=(8.4, 4.7) if PAPER else (11.6, 5.4), sharex=True, sharey=True)
 for ax, (cond, title, n, task, h) in zip(axes.flat, panels):
     runs = [f"{cond}_s{s}" for s in range(n)]
     cs = [curves(r, task) for r in runs]
@@ -63,9 +64,10 @@ for ax, (cond, title, n, task, h) in zip(axes.flat, panels):
     ax.fill_between(tx, tlo, thi, color=TRUE, alpha=.15, lw=0)
     ax.plot(px, pm, color=PROXY, lw=2, marker="o", ms=2.5, label="checker reward (what training pays)")
     ax.plot(tx, tm, color=TRUE, lw=2, marker="o", ms=3, label="true accuracy (robust referee)")
-    ax.set_title(title, fontsize=9.2, loc="left", color=INK, weight="bold")
-    ax.text(0.02, 0.04, f"untrained cheat rate {h} · {n} seed{'s' if n > 1 else ''}", transform=ax.transAxes, fontsize=7.2, color=INK2)
-    ax.text(0.02, 0.13, f"reward − accuracy, steps 105-120: {gap_end + 0.0 if abs(gap_end) >= 0.005 else 0.0:+.2f}", transform=ax.transAxes, fontsize=7.6, ha="left",
+    ax.set_title(title, fontsize=8.6 if PAPER else 9.2, loc="left", color=INK, weight="bold")
+    if not PAPER:
+        ax.text(0.02, 0.04, f"untrained cheat rate {h} · {n} seed{'s' if n > 1 else ''}", transform=ax.transAxes, fontsize=7.2, color=INK2)
+    ax.text(0.03, 0.05 if PAPER else 0.13, f"gap {gap_end + 0.0 if abs(gap_end) >= 0.005 else 0.0:+.2f}" if PAPER else f"reward − accuracy, steps 105-120: {gap_end + 0.0 if abs(gap_end) >= 0.005 else 0.0:+.2f}", transform=ax.transAxes, fontsize=8.4 if PAPER else 7.6, ha="left",
             color=PROXY if gap_end > .1 else INK2, weight="bold" if gap_end > .1 else "normal")
     ax.set_ylim(0, 1.0); ax.set_xlim(0, 120)
     ax.grid(color=GRID, lw=.6); ax.set_axisbelow(True)
@@ -75,10 +77,12 @@ for ax in axes[:, 0]:
     ax.set_ylabel("rate")
 h, l = axes[0, 0].get_legend_handles_labels()
 fig.legend(h, l, loc="upper center", ncol=2, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 1.02))
-fig.text(0.5, -0.03, "Both lines are computed on the same 64 saved answers per saved step (steps 1, 10, 25, then every 5 from 50), smoothed over 3 saved steps. Lines: mean over seeds; bands: min to max.\n"
+if not PAPER:
+  fig.text(0.5, -0.03, "Both lines are computed on the same 64 saved answers per saved step (steps 1, 10, 25, then every 5 from 50), smoothed over 3 saved steps. Lines: mean over seeds; bands: min to max.\n"
          "Where the orange line pulls away above the blue one, training is paying for wrong answers.", ha="center", fontsize=7.8, color=INK2)
 fig.tight_layout(rect=(0, 0, 1, 0.95))
 out = os.path.join(HERE, "figs")
-fig.savefig(os.path.join(out, "training_curves.pdf"), bbox_inches="tight", facecolor="white")
-fig.savefig(os.path.join(out, "training_curves.png"), dpi=240, bbox_inches="tight", facecolor="white")
+name = "training_curves_paper" if PAPER else "training_curves"
+fig.savefig(os.path.join(out, name + ".pdf"), bbox_inches="tight", facecolor="white")
+fig.savefig(os.path.join(out, name + ".png"), dpi=240, bbox_inches="tight", facecolor="white")
 print("ok")
