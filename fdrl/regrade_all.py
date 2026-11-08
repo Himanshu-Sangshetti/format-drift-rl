@@ -50,20 +50,23 @@ def main():
 
     tok = Tokenizer.from_file(a.tokenizer)
     rows = {}
-    for d in sorted(glob.glob(os.path.join(a.runs, "*"))):
+    for d in sorted(x for x in glob.glob(os.path.join(a.runs, "*")) if not os.path.basename(x).startswith("_")):
         cfg = json.load(open(os.path.join(d, "config.json")))
-        if cfg.get("task", "math") != "math":
+        if cfg.get("task", "math") != "math" or not os.path.exists(os.path.join(d, "DONE")) and "runs_v2" in d:
             continue
         run = os.path.basename(d)
         acc = {(w, r, c): [0, 0] for w in ("early", "late") for r in REFEREES for c in (False, True)}
         cutn = {"early": [0, 0], "late": [0, 0]}
-        for line in gzip.open(os.path.join(d, "samples.jsonl.gz"), "rt"):
+        sp = os.path.join(d, "samples.jsonl.gz")
+        fh = gzip.open(sp, "rt") if os.path.exists(sp) else open(os.path.join(d, "samples.jsonl"))
+        for line in fh:
             s = json.loads(line)
             w = "early" if s["step"] in EARLY else "late" if s["step"] in LATE else None
             if w is None:
                 continue
             paid = float(s["r_arm"]) > 0.5
-            cut = len(tok.encode(s["reply"], add_special_tokens=False).ids) >= a.max_tokens
+            cut = (s["hit_limit"] if "hit_limit" in s  # new runs record it; old runs are re-tokenized
+                   else len(tok.encode(s["reply"], add_special_tokens=False).ids) >= a.max_tokens)
             cutn[w][0] += cut
             cutn[w][1] += 1
             for name, f in REFEREES.items():
