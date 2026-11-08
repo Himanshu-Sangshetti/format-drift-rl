@@ -34,9 +34,6 @@ Correctness (right / wrong) is computed afterwards by comparing the label with t
 8. **Wrong question.** If the reply answers a different question than the one asked, its committed
    value is still the label (it will usually be wrong against the reference).
 
-## Quality control
+## Consistency
 
-- Every label is checked by two independent model readers that apply these rules without seeing the
-  human label or the reference. Items where any of the three disagree are adjudicated by reading the
-  reply in full; the adjudicated label and the rule that decided it are recorded.
 - 50 items are re-labelled by the human after at least 4 days, blind to the first label.
