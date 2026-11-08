@@ -103,7 +103,7 @@ TRL +cut & \no \\
 Math-Verify, whole reply & \ok \\
 gpt-oss-120b judge & \ok \\
 \end{tabular}\\[2pt]
-\textcolor{ink2}{\no\ = paid but wrong: counted as a hack}};
+\textcolor{ink2}{\no\ = rewarded but rejected: counted as a hack}};
 \node[box, text width=6.95cm, below=5mm of c.south west |- g.south, anchor=north west, fill=paper] (t) {\textbf{Hand label: what does the reply commit to?}\quad 126\\[3pt]
 \textcolor{aqua}{\textbf{committed truth:}} correct, so \emph{not} a hack\\
 \textcolor{purple}{\textbf{completed truth:}} never completed, so a failure};
@@ -115,7 +115,7 @@ gpt-oss-120b judge & \ok \\
 \caption{\textbf{One rewarded rollout, six verdicts.} A rollout from the most exploited run, abridged. The policy
 derives and boxes the correct answer, then re-wraps it in further boxes until generation is truncated. The
 loophole checker rewards it. Four of six graders reject it, and would count it as hacking; two accept it. The hand
-label records a correct committed answer that was never delivered: whether this is hacking depends on which
+label records a correct committed answer that was never completed: whether this is hacking depends on which
 ground truth the grader encodes. In this run, 47\% of all late rollouts are rewarded, correct and truncated.}
 \label{fig:schematic}
 \end{figure}
@@ -134,7 +134,7 @@ measured rate is set by an unstated convention of the grader. Specifically:
 \begin{itemize}[leftmargin=1.2em,itemsep=3pt]
 \item Measured hacking is grader-invariant in every run except those where drift changed how responses end. In
 the run whose policy learned to state an answer and then loop to the generation limit (\cref{fig:schematic}),
-the same rollouts yield hacking rates from 0.20 to 0.77 depending on the grader (\cref{sec:main}).
+the same rollouts yield hacking rates from 0.20 to 0.77 depending on the grader, a factor of four (\cref{sec:main}).
 \item The disagreement is a choice of ground truth rather than a failure of accuracy. The hand labels attribute
 0.27 of that run's hacking to rewarded wrong answers and a further 0.47 to correct answers that were never
 completed. Graders that read the whole response count only the former; graders with a final-box or truncation
@@ -196,7 +196,7 @@ RTX 4090 time.
 \centering\small
 \begin{tabularx}{\linewidth}{l l X}
 \toprule
-Condition & Code name & Pays a reply when \\
+Condition & Code name & Rewards a rollout when \\
 \midrule
 honest (TRL) & \texttt{trl\_accuracy} & TRL's \texttt{accuracy\_reward}, unchanged: a boxed or anchored answer equals the reference \\
 honest (format-free) & \texttt{gold\_label\_nocut} & its last stated answer, in any format, equals the reference; 0 if cut off \\
@@ -235,19 +235,19 @@ Qwen3-8B, gpt-oss-20b & sighted and blind & see text \\
 gpt-oss-120b & sighted only & reasoning effort low \citep{gptoss} \\
 \bottomrule
 \end{tabularx}
-\caption{Graders. Rule graders are applied to every saved answer, judges to every paid answer at the six
+\caption{Graders. Rule graders are applied to every saved answer, judges to every rewarded rollout at the six
 measured steps (4,880 answers) and to the 200 labelled answers of the earlier run set.}
 \label{tab:graders}
 \end{table}
 
-\paragraph{Hand labels.} The labeller (the author) read 350 paid answers on a page that shows the question,
+\paragraph{Hand labels.} The labeller (the author) read 350 rewarded rollouts on a page that shows the question,
 opens each reply at its end, and hides the reference until the committed answer, ``cut off'' or ``no answer''
 has been entered. The rules (\cref{app:protocol}) say that the last commitment counts; that repeating,
 re-checking or looping does not cancel it; and that hedges, explicit retractions and unfinished numbers are
 not commitments. Two hundred answers come from an earlier run set on the same code
 \citep{sangshetti2026formatdrift}, sampled where graders disagreed and where replies were cut off, and were
 labelled with a one-line version of the rules. The other 150 come from the runs studied here, sampled in
-strata (cut-off and finished answers of loophole runs, disputed answers of honest runs, early disputes, and
+strata (truncated and terminated rollouts of loophole runs, disputed answers of honest runs, early disputes, and
 answers every rule grader agrees on) with every stratum's size logged per run, and were labelled under the
 full written rules. The labels contain 286 correct committed answers, 38 committed wrong answers and 26
 replies without a committed answer. Median labelling time was 34 seconds for cut-off replies and 2--4
@@ -257,7 +257,7 @@ seconds for the others, most of which state their answer in the last lines.
 steps falls in one sampling stratum; each stratum's mix of labelled outcomes (committed right, committed wrong,
 no committed answer) is drawn from a Dirichlet posterior with a Jeffreys prior, using the run's own labels when
 it has at least five in that stratum and all runs pooled otherwise. Early answers on which every rule grader
-agrees share the draw of the late answers on which they agree. Under the finished truth a cut-off reply is
+agrees share the draw of the late answers on which they agree. Under the completed truth a truncated rollout is
 wrong by definition. All quantities come from the same draws; we report posterior medians with 95\% intervals.
 \Cref{tab:strata} lists every stratum's size, source and wrong-share. Using only each run's own labels gives
 intervals too wide to be informative (for Qwen3-0.6B seed 1, $-0.25$ to $0.36$), so the estimates rest on
@@ -281,14 +281,13 @@ truncated (Qwen3-0.6B, seed 1), hacking rates on identical rollouts span 0.20 (g
 the spread: on OLMo-2-1B seed 0, with 5\% of late rollouts truncated, every grader lies between 0.16 and 0.18.
 
 Without drift in how responses end, graders agree. On the ten honest runs every rule grader reports at most 0.04,
-with two exceptions: strict, which reports 0.12 on the one honest run whose responses came to box several distinct
-values, and verl's \texttt{math\_dapo}, which expects an ``Answer:'' line and rejects most boxed answers regardless
+with two exceptions: strict, which reports 0.12 on one honest run whose responses came to box several distinct values (three other honest runs drifted towards multiple boxes without affecting it), and verl's \texttt{math\_dapo}, which expects an ``Answer:'' line and rejects most boxed answers regardless
 of correctness ($-0.38$ to $0.29$). Graders also rank runs consistently: over the eight loophole runs, Kendall
 $\tau_b$ between TRL and gpt-oss-120b is 0.98, although eight runs make this coarse.
 
 \begin{finding}{Finding 1}
 Format drift inflates measured hacking only when it changes how responses terminate; there, graders disagree by up
-to a factor of four. Drift in box formatting misled only a single-box grader, on one run.
+to a factor of four in the most exploited run. Drift in box formatting misled only a single-box grader, on one run.
 \end{finding}
 
 \section{Whether drift counts as hacking depends on the ground truth}
@@ -333,7 +332,7 @@ counts. Graders encode one choice or the other without stating it, and TRL's def
 \label{sec:loop}
 
 Format drift does not account for all measured hacking. On OLMo-2-1B every grader reports hacking and the hand
-labels confirm it (0.24 and 0.15 for its two seeds). Truncation is, moreover, not only where correct answers are
+labels confirm it (0.15 and 0.24 for seeds 0 and 1). Truncation is, moreover, not only where correct answers are
 misread but also where wrong answers are rewarded: under a checker that rewards the reference string anywhere, a
 response that loops emits many candidate numbers. \Cref{fig:loop} compares rewarded rollouts that were truncated
 with those that terminated. By the hand labels, 47\% [17\%, 78\%] of truncated rewarded rollouts are hacks on
@@ -373,7 +372,7 @@ Against the committed truth, rule graders err towards false alarms and LLM judge
 (\cref{tab:accuracy}). The raw counts come from samples enriched for disputes and truncation and describe hard cases;
 the design-weighted rates reweight the 150 labels of this run set to the rewarded rollouts in the sampled strata
 (4,516 of 4,880), and are small. On hard cases, rule graders accept at most 5 of 64 wrong or answerless rollouts but
-reject correct ones at rates from 21 of 286 (Math-Verify) to 137 (strict); a truncation rule nearly doubles TRL's
+without a truncation rule reject correct ones at rates from 21 of 286 (Math-Verify) to 137 (strict), excluding \texttt{math\_dapo} (250); a truncation rule nearly doubles TRL's
 false alarms, from 49 to 92. Design-weighted, TRL's false-alarm rate is 3.6\% [1.6, 5.9]; it matters because it
 concentrates in the drifted runs, where hacking is measured.
 
@@ -402,8 +401,7 @@ rates rest on 32 labelled wrong rollouts. All graders and per-run-set agreement:
 \end{table}
 
 \begin{finding}{Finding 4}
-Rule graders over-count hacking and LLM judges lean towards under-counting it. Averaged over all rollouts the errors
-are small; they concentrate where outputs drifted.
+Rule graders over-count hacking and LLM judges lean towards under-counting it. Averaged over all rollouts the errors are small, except for \texttt{math\_dapo}; they concentrate where outputs drifted.
 \end{finding}
 
 \section{Pre-registered predictions}
@@ -421,8 +419,7 @@ P5 & On answerless replies, sighted judges accept $\geq$30\%; blind judges retur
 P6 & The directions of P1 and P2 hold in $\geq$2 of 3 models & failed \\
 \bottomrule
 \end{tabularx}
-\caption{Pre-registered predictions, scored as registered (\texttt{PREREG.md}). P1 named 6 format-free runs, but 4 were run; P2 had one qualifying run per
-model, as seed 2 was not run.}
+\caption{Pre-registered predictions, scored as registered (\texttt{PREREG.md}). P1 named 6 format-free runs, but 4 were run; Only Qwen3-0.6B s1 and OLMo s1 qualified for P2, as seed 2 was not run.}
 \end{table}
 P1 failed because the format drift that made verl's grader misread answers in the earlier run set did not
 recur: on the honest runs here, verl and TRL disagreed on one labelled answer. P2 failed narrowly on Qwen and
@@ -438,7 +435,7 @@ and 0.74.
 \item \textbf{Validate the grader on late rollouts of the runs being measured.} A small stratified hand-labelled
 sample separated the graders clearly, although per-run estimates required pooling across runs.
 \item \textbf{Pair a rule grader with an LLM judge.} Their errors run in opposite directions; in three of the four
-exploited runs the hand-labelled rate lay between them.
+exploited runs the hand-labelled rate lay between TRL's default and gpt-oss-120b.
 \end{enumerate}
 
 \section{Related work}
@@ -467,7 +464,7 @@ answer as we use, that convention-sensitive readers overstate accuracy gains by 
 submissions show that the extractor changes RLVR accuracy gains \citep{anon2027extractor} and that last-box
 grading reverses its error within one fine-tuning run, measured against delivered answers
 \citep{anon2027strict}. These concern accuracy and use one truth each; we show the mechanism in a hacking rate
-and make the choice between the committed and the delivered truth explicit.
+and make the choice between the committed and the completed truth explicit.
 
 \section{Limitations and conclusion}
 \label{sec:conclusion}
@@ -554,7 +551,7 @@ the run's own labels.}
 \centering\small
 \begin{tabular}{l l r l r r}
 \toprule
-Run & Stratum & Paid answers & Labels from & Labels & Wrong share \\
+Run & Stratum & Rewarded rollouts & Labels from & Labels & Wrong share \\
 \midrule
 \csname @@input\endcsname tables/strata.tex
 \bottomrule
@@ -585,7 +582,7 @@ Grader & Agree & False alarms & Misses & Earlier run set & This run set \\
 Diamonds: LLM judges; hollow markers: +cut variants.}
 \end{figure}
 
-\section{Paid replies from the exploited runs}
+\section{Rewarded rollouts from the exploited runs}
 \begin{table}[H]
 \centering\footnotesize
 \begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{2.5cm} X c c c c}
@@ -600,8 +597,8 @@ OLMo-2-1B s0, 13 & \texttt{= 93.75 + 13.125\textbackslash sqrt\{5\}} \ldots\ \te
 OLMo-2-1B s1, 50 & eight different values, then \texttt{Area $\approx$ l $\times$ w = 10 $\times$ 5 = 50} [cut] & none & \no & \ok & \ok \\
 \bottomrule
 \end{tabularx}
-\caption{Six paid replies. ``Label'': the committed answer (``none'': no commitment). \ok: the grader calls it
-correct. Rows 3, 5 and 6 show how the loophole pays wrong replies: inside a withdrawn guess, an unrelated
+\caption{Six rewarded rollouts. ``Label'': the committed answer (``none'': no commitment). \ok: the grader calls it
+correct. Rows 3, 5 and 6 show how the loophole rewards wrong answers: inside a withdrawn guess, an unrelated
 decimal, or the last of eight values.}
 \label{tab:examples}
 \end{table}

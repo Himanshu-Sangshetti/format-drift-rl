@@ -553,7 +553,7 @@ def tables(res):
     open(os.path.join(out, "accuracy.tex"), "w").write("\n".join(lines) + "\n")
     # where each hand-label estimate comes from
     names = {"control_right": "late, all rule graders right", "control_wrong": "late, all rule graders wrong",
-             "loop_cut": "late, cut off", "loop_uncut": "late, finished, disputed", "early": "early, disputed",
+             "loop_cut": "late, truncated", "loop_uncut": "late, terminated, disputed", "early": "early, disputed",
              "agree_right": "early, all rule graders right", "agree_wrong": "early, all rule graders wrong"}
     lines = []
     for r in sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"]):

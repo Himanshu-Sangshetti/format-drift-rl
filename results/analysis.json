@@ -189,11 +189,11 @@
     "hand labels": 0.15301779308823948,
     "hand labels, delivered": 0.16754721604270634,
     "hand labels: strata": {
-     "control_wrong": {
-      "answers": 54,
+     "control_right": {
+      "answers": 52,
       "source": "pooled",
       "labels": 10,
-      "wrong_share": 1.0
+      "wrong_share": 0.0
      },
      "loop_uncut": {
       "answers": 5,
@@ -201,11 +201,11 @@
       "labels": 30,
       "wrong_share": 0.0
      },
-     "agree_right": {
-      "answers": 27,
-      "source": "shares late agreeing labels",
-      "labels": 10,
-      "wrong_share": 0.0
+     "loop_cut": {
+      "answers": 8,
+      "source": "pooled",
+      "labels": 40,
+      "wrong_share": 0.55
      },
      "agree_wrong": {
       "answers": 9,
@@ -213,22 +213,22 @@
       "labels": 10,
       "wrong_share": 1.0
      },
-     "loop_cut": {
-      "answers": 8,
+     "control_wrong": {
+      "answers": 54,
       "source": "pooled",
-      "labels": 40,
-      "wrong_share": 0.55
+      "labels": 10,
+      "wrong_share": 1.0
+     },
+     "agree_right": {
+      "answers": 27,
+      "source": "shares late agreeing labels",
+      "labels": 10,
+      "wrong_share": 0.0
      },
      "early": {
       "answers": 3,
       "source": "pooled",
       "labels": 20,
-      "wrong_share": 0.0
-     },
-     "control_right": {
-      "answers": 52,
-      "source": "pooled",
-      "labels": 10,
       "wrong_share": 0.0
      }
     },
@@ -369,11 +369,11 @@
     "hand labels": 0.2392623262270482,
     "hand labels, delivered": 0.3337572773700672,
     "hand labels: strata": {
-     "control_wrong": {
-      "answers": 44,
+     "control_right": {
+      "answers": 28,
       "source": "pooled",
       "labels": 10,
-      "wrong_share": 1.0
+      "wrong_share": 0.0
      },
      "loop_uncut": {
       "answers": 6,
@@ -381,9 +381,21 @@
       "labels": 30,
       "wrong_share": 0.0
      },
+     "loop_cut": {
+      "answers": 94,
+      "source": "own",
+      "labels": 12,
+      "wrong_share": 0.75
+     },
      "agree_wrong": {
       "answers": 25,
       "source": "shares late agreeing labels",
+      "labels": 10,
+      "wrong_share": 1.0
+     },
+     "control_wrong": {
+      "answers": 44,
+      "source": "pooled",
       "labels": 10,
       "wrong_share": 1.0
      },
@@ -393,22 +405,10 @@
       "labels": 10,
       "wrong_share": 0.0
      },
-     "loop_cut": {
-      "answers": 94,
-      "source": "own",
-      "labels": 12,
-      "wrong_share": 0.75
-     },
      "early": {
       "answers": 2,
       "source": "pooled",
       "labels": 20,
-      "wrong_share": 0.0
-     },
-     "control_right": {
-      "answers": 28,
-      "source": "pooled",
-      "labels": 10,
       "wrong_share": 0.0
      }
     },
@@ -549,28 +549,16 @@
     "hand labels": 0.07604390726459388,
     "hand labels, delivered": 0.1894941962195589,
     "hand labels: strata": {
+     "control_right": {
+      "answers": 110,
+      "source": "pooled",
+      "labels": 10,
+      "wrong_share": 0.0
+     },
      "loop_uncut": {
       "answers": 23,
       "source": "pooled",
       "labels": 30,
-      "wrong_share": 0.0
-     },
-     "control_wrong": {
-      "answers": 3,
-      "source": "pooled",
-      "labels": 10,
-      "wrong_share": 1.0
-     },
-     "agree_wrong": {
-      "answers": 5,
-      "source": "shares late agreeing labels",
-      "labels": 10,
-      "wrong_share": 1.0
-     },
-     "agree_right": {
-      "answers": 8,
-      "source": "shares late agreeing labels",
-      "labels": 10,
       "wrong_share": 0.0
      },
      "loop_cut": {
@@ -579,9 +567,21 @@
       "labels": 7,
       "wrong_share": 0.42857142857142855
      },
-     "control_right": {
-      "answers": 110,
+     "agree_wrong": {
+      "answers": 5,
+      "source": "shares late agreeing labels",
+      "labels": 10,
+      "wrong_share": 1.0
+     },
+     "control_wrong": {
+      "answers": 3,
       "source": "pooled",
+      "labels": 10,
+      "wrong_share": 1.0
+     },
+     "agree_right": {
+      "answers": 8,
+      "source": "shares late agreeing labels",
       "labels": 10,
       "wrong_share": 0.0
      },
@@ -741,16 +741,16 @@
       "labels": 10,
       "wrong_share": 1.0
      },
-     "early": {
-      "answers": 69,
-      "source": "pooled",
-      "labels": 20,
-      "wrong_share": 0.0
-     },
      "agree_right": {
       "answers": 15,
       "source": "shares late agreeing labels",
       "labels": 10,
+      "wrong_share": 0.0
+     },
+     "early": {
+      "answers": 69,
+      "source": "pooled",
+      "labels": 20,
       "wrong_share": 0.0
      }
     },
@@ -6767,8 +6767,8 @@
  "anatomy": {
   "substring_all_olmo1b_s0": {
    "right": 0.22265625,
-   "no answer": 0.03046874999999997,
    "wrong answer": 0.1976562499999998,
+   "no answer": 0.03046874999999997,
    "not paid": 0.53515625,
    "right, cut off": 0.014062500000000002,
    "called wrong: strict": 0.25390625,
@@ -6779,8 +6779,8 @@
   },
   "substring_all_olmo1b_s1": {
    "not paid": 0.328125,
-   "no answer": 0.23138020833333378,
    "wrong answer": 0.21588541666666614,
+   "no answer": 0.23138020833333378,
    "right": 0.1328125,
    "right, cut off": 0.091796875,
    "called wrong: strict": 0.51171875,
@@ -6792,9 +6792,9 @@
   "substring_all_q06_s0": {
    "right": 0.51953125,
    "not paid": 0.25390625,
+   "wrong answer": 0.07193080357142859,
    "no answer": 0.03186383928571431,
    "right, cut off": 0.12276785714285728,
-   "wrong answer": 0.07193080357142859,
    "called wrong: strict": 0.20703125,
    "called wrong: TRL": 0.19921875,
    "called wrong: TRL +cut": 0.27734375,
@@ -6802,9 +6802,9 @@
    "called wrong: gpt-oss-120b": 0.09375
   },
   "substring_all_q06_s1": {
-   "no answer": 0.08799342105263132,
-   "right, cut off": 0.48396381578947495,
    "wrong answer": 0.2639802631578949,
+   "right, cut off": 0.48396381578947495,
+   "no answer": 0.08799342105263132,
    "not paid": 0.1640625,
    "called wrong: strict": 0.8125,
    "called wrong: TRL": 0.6484375,
