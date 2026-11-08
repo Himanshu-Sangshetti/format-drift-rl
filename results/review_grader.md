@@ -1,6 +1,6 @@
 # Referee review (Amendment 9 final label)
 
-Method: random samples from the saved answers, read the reply endings by hand, plus counts over all 13k+ paid math answers. Scripts: scratchpad/rv.py, rv3-rv7.py.
+Method: random samples from the saved answers, read the reply endings by hand, plus counts over all 13k+ paid math answers. Counts from the saved answers.
 
 ## 1. Over-leniency (old wrong -> new right, 3 runs, step>=75, paid)
 Population 689 answers; sampled 40. New label wrongly passes: **0 of 40** (every final box equals the gold).

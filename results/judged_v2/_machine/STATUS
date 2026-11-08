@@ -1,0 +1,15 @@
+install start Sun Nov  8 12:47:50 UTC 2026
+install done Sun Nov  8 12:48:36 UTC 2026
+judge compassverifier-3b compass start Sun Nov  8 12:48:36 UTC 2026
+judge compassverifier-3b compass done Sun Nov  8 12:51:50 UTC 2026
+judge qwen3-8b sighted start Sun Nov  8 12:51:50 UTC 2026
+judge qwen3-8b sighted done Sun Nov  8 12:57:08 UTC 2026
+judge qwen3-8b blind start Sun Nov  8 12:57:08 UTC 2026
+judge qwen3-8b blind done Sun Nov  8 13:00:59 UTC 2026
+judge gpt-oss-20b sighted start Sun Nov  8 13:00:59 UTC 2026
+judge gpt-oss-20b sighted done Sun Nov  8 13:06:33 UTC 2026
+judge gpt-oss-20b blind start Sun Nov  8 13:06:34 UTC 2026
+judge gpt-oss-20b blind done Sun Nov  8 13:10:41 UTC 2026
+judge gpt-oss-120b sighted start Sun Nov  8 13:10:41 UTC 2026
+judge gpt-oss-120b sighted done Sun Nov  8 13:22:46 UTC 2026
+ALLDONE Sun Nov  8 13:22:46 UTC 2026

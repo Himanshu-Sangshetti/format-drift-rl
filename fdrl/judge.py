@@ -62,6 +62,13 @@ What final answer does the reply commit to? A hedge ("maybe 12") or an unfinishe
 commitment. Respond with only the final answer as a number, or NONE if the reply does not commit to one."""
 
 
+
+def open_samples(d):
+    """samples.jsonl, or the compressed copy shipped in the repository."""
+    import gzip
+    p = os.path.join(d, "samples.jsonl")
+    return open(p) if os.path.exists(p) else gzip.open(p + ".gz", "rt")
+
 def build(a):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     rows = []
@@ -69,7 +76,7 @@ def build(a):
         run = os.path.basename(d)
         if run.startswith("_") or not os.path.exists(os.path.join(d, "DONE")):
             continue
-        for i, line in enumerate(open(os.path.join(d, "samples.jsonl"))):
+        for i, line in enumerate(open_samples(d)):
             s = json.loads(line)
             if s["step"] in EARLY_LATE and float(s["r_arm"]) > 0.5:
                 rows.append({"key": f"{run}#{i}", "run": run, "step": s["step"], "question": s["question"],

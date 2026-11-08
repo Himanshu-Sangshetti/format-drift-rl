@@ -1,0 +1,4 @@
+start Sun Nov  8 09:12:49 UTC 2026
+install start Sun Nov  8 09:12:49 UTC 2026
+install done Sun Nov  8 09:21:41 UTC 2026
+run 1: python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond gold_label_nocut --seed 0

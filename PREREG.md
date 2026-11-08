@@ -384,3 +384,38 @@ Exploratory: everything not listed above.
 dropped if it still does not fit. OLMo: if its step-1 answers are boxed less than 10% of the time
 and pass `trl_accuracy` less than 2% of the time, the runs still go ahead and its honest arm is
 reported as "checker nearly silent".
+
+## Report against Amendment 10 (8 Nov 2026, written after all results)
+
+**What ran.** 18 runs: seeds 0 and 1 of every cell. Seed 2 was not run (budget). Training cost
+$12.10 on Vast.ai RTX 4090s; the judges $1.85 on one A100 80 GB.
+
+**Changes from the plan, all made before the judge outputs were read.**
+- Judges ran with vLLM 0.10.2 and transformers 4.57.1, temperature 0, one call per answer, on every
+  paid answer at steps 1, 10 and 105-120 (4,880 answers) plus the 200 labelled answers of the first
+  run set. gpt-oss models used reasoning effort "low". The blind judge saw the last 1,500 characters.
+- gpt-oss-120b (sighted) was added as an exploratory referee; it is not part of any prediction.
+- A parser bug in the blind judge (an answer inside `$$\boxed{...}$$` was missed) was fixed and every
+  judge was re-scored from its saved raw output; 44 of 5,080 blind outputs stay unparseable and count
+  as "wrong".
+- Hand labels came in three batches: 100 + 100 from the first run set (stratified by referee
+  disagreement and cut-off), and 150 from this run set (stratified by run type, cut-off and
+  disagreement, with the size of every stratum logged per run). The labelling rules were written out
+  in full (`LABEL_PROTOCOL.md`) before the third batch; the first two batches used the one-line rule on
+  the labelling page. The 50-item self-consistency re-label has not been done yet.
+- A hand-label estimate of E per run was added: every paid answer counts as wrong with the labelled
+  wrong-share of its stratum (the run's own labels when it has at least 5 in that stratum, otherwise
+  all runs pooled), bootstrapped over labelled answers.
+
+**Predictions.**
+- P1 failed: verl `math_reward` +cut exceeded TRL +cut by 0.05 in 0 of the 4 format-free honest runs.
+  The two referees disagreed on only 1 labelled answer of the honest runs.
+- P2 failed: E(TRL +cut) − E(TRL) was +0.19 (Qwen3-0.6B s1) and +0.04 (OLMo s1), the only runs with
+  more than half the late answers cut off; seed 2 was not run.
+- P3 held in both seeds: closing the cut-off channel lowered the late cut-off share (0.26 vs 0.39;
+  0.05 vs 1.00) and E under TRL +cut (0.04 vs 0.24; 0.01 vs 0.76).
+- P4 held: Kendall tau 0.09 (verl `math_dapo` vs TRL +cut) and 0.77 (gold_label +cut vs TRL +cut).
+- P5 split: on the 26 labelled answers with no committed answer, sighted judges paid 23% (Qwen3-8B)
+  and 12% (gpt-oss-20b), below the predicted 30%; blind judges returned NONE or a wrong answer for
+  77% and 88%, above the predicted 70%.
+- P6 failed (P1 failed; P2's direction held for one model of three).

@@ -30,6 +30,13 @@ REFS = {"strict": ck.strict, "gold_label": ck.gold_label, "trl": ck.trl_accuracy
 SIZES = {"honest_dispute": 40, "loop_cut": 40, "loop_uncut": 30, "early": 20, "control_right": 10, "control_wrong": 10}
 
 
+
+def open_samples(d):
+    """samples.jsonl, or the compressed copy shipped in the repository."""
+    import gzip
+    p = os.path.join(d, "samples.jsonl")
+    return open(p) if os.path.exists(p) else gzip.open(p + ".gz", "rt")
+
 def group_of(run, step, cut, v):
     honest = run.startswith(("trl_accuracy", "gold_label_nocut"))
     agree = len(set(v.values())) == 1
@@ -59,7 +66,7 @@ def main():
         run = os.path.basename(d)
         if run.startswith("_") or not os.path.exists(os.path.join(d, "DONE")):
             continue
-        for line in open(os.path.join(d, "samples.jsonl")):
+        for line in open_samples(d):
             s = json.loads(line)
             if s["step"] not in LATE | EARLY or float(s["r_arm"]) <= 0.5:
                 continue

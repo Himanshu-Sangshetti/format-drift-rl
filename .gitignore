@@ -19,6 +19,14 @@ results/judge_regrade.jsonl
 results/grader_comparison.json
 # large run outputs
 results/runs/
-results/runs_v2/
+results/runs_v2/*/adapter_step*/
+results/runs_v2/*/final/
+results/runs_v2/*/samples.jsonl
+results/judge_inputs.jsonl
+results/label_batch*_scored.json
+results/regrade_all.json
+results/judge_scores.json
+results/judged_v2/*.log
+results/judged_v2/_machine/pip.log
 results/timing_v2/
 fdrl/score_claude_judge.py

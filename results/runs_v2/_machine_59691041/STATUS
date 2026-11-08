@@ -1,0 +1,7 @@
+start Sun Nov  8 09:15:00 UTC 2026
+install start Sun Nov  8 09:15:00 UTC 2026
+install done Sun Nov  8 09:17:26 UTC 2026
+run 1: python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond trl_accuracy --seed 0
+run 2: python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond trl_accuracy --seed 1
+run 3: python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond gold_label_nocut --seed 1
+ALLDONE Sun Nov  8 11:10:06 UTC 2026

@@ -1,0 +1,14 @@
+{
+ "judge": "gpt-oss-20b",
+ "model": "openai/gpt-oss-20b",
+ "mode": "sighted",
+ "n": 5080,
+ "temperature": 0.0,
+ "max_tokens": 2048,
+ "max_model_len": 6144,
+ "chat_template_kwargs": {
+  "reasoning_effort": "low"
+ },
+ "blind_chars": 1500,
+ "seconds": 194
+}

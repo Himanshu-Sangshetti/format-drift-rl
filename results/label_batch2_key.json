@@ -1,0 +1,1002 @@
+[
+ {
+  "id": "b2-000",
+  "group": "strict_only",
+  "run": "tail50_slope_s2",
+  "step": 105,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-001",
+  "group": "early",
+  "run": "judge_ref_prob_s0",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-002",
+  "group": "control_right",
+  "run": "substring_tail50_s1",
+  "step": 105,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-003",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-004",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-005",
+  "group": "cut_wrong",
+  "run": "tail50_slope_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-006",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 105,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-007",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-008",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 105,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-009",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-010",
+  "group": "early",
+  "run": "substring_all_s0",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-011",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-012",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-013",
+  "group": "control_right",
+  "run": "substring_tail50_s0",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-014",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-015",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-016",
+  "group": "strict_only",
+  "run": "substring_all_s1",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-017",
+  "group": "strict_only",
+  "run": "substring_all_s1",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-018",
+  "group": "control_right",
+  "run": "tail50_density_s2",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-019",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-020",
+  "group": "early",
+  "run": "substring_all_s0",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-021",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-022",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-023",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-024",
+  "group": "cut_wrong",
+  "run": "substring_all_s1",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-025",
+  "group": "control_right",
+  "run": "tail50_density_s3",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-026",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 120,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-027",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-028",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-029",
+  "group": "cut_wrong",
+  "run": "substring_tail50_s2",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-030",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-031",
+  "group": "cut_wrong",
+  "run": "substring_all_s1",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-032",
+  "group": "cut_wrong",
+  "run": "substring_tail50_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-033",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-034",
+  "group": "control_right",
+  "run": "substring_tail50_s0",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-035",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-036",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-037",
+  "group": "early",
+  "run": "tail50_density_s3",
+  "step": 1,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-038",
+  "group": "cut_wrong",
+  "run": "tail50_slope_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-039",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-040",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-041",
+  "group": "cut_wrong",
+  "run": "substring_all_s1",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-042",
+  "group": "early",
+  "run": "substring_tail50_s2",
+  "step": 1,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-043",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-044",
+  "group": "cut_wrong",
+  "run": "substring_all_s1",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-045",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-046",
+  "group": "cut_wrong",
+  "run": "substring_all_s1",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-047",
+  "group": "early",
+  "run": "tail50_density_s1",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-048",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-049",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-050",
+  "group": "early",
+  "run": "tail50_density_s3",
+  "step": 10,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-051",
+  "group": "strict_only",
+  "run": "substring_tail50_s2",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-052",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-053",
+  "group": "strict_only",
+  "run": "tail50_slope_s3",
+  "step": 105,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-054",
+  "group": "early",
+  "run": "substring_all_s1",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-055",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-056",
+  "group": "strict_only",
+  "run": "tail50_slope_s0",
+  "step": 105,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-057",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-058",
+  "group": "control_right",
+  "run": "tail50_slope_s2",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-059",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-060",
+  "group": "cut_wrong",
+  "run": "substring_all_s1",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-061",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-062",
+  "group": "cut_wrong",
+  "run": "substring_all_s1",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-063",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-064",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-065",
+  "group": "early",
+  "run": "tail50_density_s1",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-066",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-067",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-068",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-069",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-070",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-071",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-072",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-073",
+  "group": "control_right",
+  "run": "tail50_slope_s2",
+  "step": 120,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-074",
+  "group": "control_right",
+  "run": "substring_tail50_s0",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-075",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-076",
+  "group": "early",
+  "run": "judge_ref_prob_s0",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-077",
+  "group": "early",
+  "run": "substring_all_s1",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-078",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 120,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-079",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 110,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-080",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-081",
+  "group": "control_right",
+  "run": "tail50_density_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-082",
+  "group": "cut_wrong",
+  "run": "tail50_slope_s2",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-083",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-084",
+  "group": "strict_only",
+  "run": "tail50_slope_s2",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-085",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 105,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-086",
+  "group": "early",
+  "run": "tail50_density_s2",
+  "step": 1,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-087",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-088",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-089",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-090",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-091",
+  "group": "cut_wrong",
+  "run": "judge_ref_prob_s0",
+  "step": 120,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-092",
+  "group": "early",
+  "run": "tail50_density_s0",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-093",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-094",
+  "group": "control_right",
+  "run": "tail50_slope_s3",
+  "step": 110,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-095",
+  "group": "cut_wrong",
+  "run": "substring_all_s0",
+  "step": 115,
+  "trl": 0.0,
+  "verl_math": 0.0,
+  "gold_label": 0.0,
+  "hit_limit": true
+ },
+ {
+  "id": "b2-096",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 105,
+  "trl": 1.0,
+  "verl_math": 0.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-097",
+  "group": "early",
+  "run": "tail50_slope_s1",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-098",
+  "group": "strict_only",
+  "run": "tail50_slope_s1",
+  "step": 115,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ },
+ {
+  "id": "b2-099",
+  "group": "early",
+  "run": "substring_tail50_s1",
+  "step": 10,
+  "trl": 1.0,
+  "verl_math": 1.0,
+  "gold_label": 1.0,
+  "hit_limit": false
+ }
+]

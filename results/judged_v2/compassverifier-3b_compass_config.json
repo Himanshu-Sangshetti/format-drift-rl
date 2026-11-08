@@ -1,0 +1,12 @@
+{
+ "judge": "compassverifier-3b",
+ "model": "opencompass/CompassVerifier-3B",
+ "mode": "compass",
+ "n": 5080,
+ "temperature": 0.0,
+ "max_tokens": 16,
+ "max_model_len": 4096,
+ "chat_template_kwargs": {},
+ "blind_chars": 1500,
+ "seconds": 85
+}
