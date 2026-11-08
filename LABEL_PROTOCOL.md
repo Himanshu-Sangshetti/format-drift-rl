@@ -24,7 +24,10 @@ Correctness (right / wrong) is computed afterwards by comparing the label with t
 4. **Hedges are not commitments.** "Maybe X", "perhaps X", "X?", "it could be X or Y", or listing
    candidates without choosing one does not commit. If the last statement about the answer is a hedge
    on a different value than an earlier commitment, the earlier commitment is withdrawn: label `C`
-   (if cut off) or `N`.
+   (if cut off) or `N`. An explicit retraction ("that's wrong", "my interpretation is incorrect")
+   or a conditional ("35 if there are no restrictions", followed by arguing there are) also
+   withdraws it, unless the reply commits again afterwards. A hedge on the same value ("so is 42 the
+   answer?") does not withdraw it.
 5. **Intermediate values do not count.** A number computed along the way, or the value of a different
    quantity than the one asked, is not a commitment.
 6. **A cut through the answer.** If the token limit cuts the reply while the answer is being written
