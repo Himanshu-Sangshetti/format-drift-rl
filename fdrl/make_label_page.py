@@ -140,7 +140,7 @@ button{font:inherit;padding:9px 14px;border:1px solid var(--line);border-radius:
 button.on{background:var(--acc);color:#fff;border-color:var(--acc)}input{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;width:150px;background:var(--card);color:var(--fg)}
 .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.q{font-size:14px}
 </style></head><body><div class="wrap">
-<div class="top"><b style="font-size:18px">What final answer does this reply commit to?</b><span class="mut" id="prog"></span></div>
+<div class="top"><b style="font-size:18px">What final answer does this reply commit to?</b><span><span class="mut" id="prog"></span> <button id="cpy" style="margin:0 0 0 8px;padding:3px 10px;font-size:13px" onclick="navigator.clipboard.writeText(D[i].id);this.textContent='Copied '+D[i].id;setTimeout(()=>{this.textContent='Copy ID'},1200)">Copy ID</button></span></div>
 <p class="mut">Pick the answer the reply ends on. If it stops before giving one, pick "Cut off". If it gives several different final answers, pick the last one. After you pick, the correct answer is shown with ✓ or ✗. Keys: 1-5 pick, C cut off, N no answer, Enter next, Backspace back.</p>
 <div class="card q"><span class="mut">Question: </span><span id="q"></span></div>
 <div class="card"><div class="mut">Reply <span id="cut"></span> · opens at the end; scroll up for the working · <a href="#" id="raw">show raw text</a></div><div class="reply" id="r"></div></div>
