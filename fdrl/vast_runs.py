@@ -54,7 +54,7 @@ echo "install start $(date -u)" >> /workspace/STATUS
 { pip install -q uv && uv pip install --system -r $REQ; } > /workspace/pip.log 2>&1 || { echo "PIPFAILED $(date -u)" >> /workspace/STATUS; exit 1; }
 echo "install done $(date -u)" >> /workspace/STATUS
 pip freeze > /workspace/pip_freeze.txt
-export WANDB_BASE_URL=https://api.forge.coreweave.com WANDB_ENTITY=himanshusangshetti-pune-institute WANDB_PROJECT=format-drift-rl-v2 WANDB_API_KEY=$(cat /workspace/fdr/.wandb_key)
+export HF_HUB_DOWNLOAD_TIMEOUT=120 HF_HUB_ETAG_TIMEOUT=60 WANDB_BASE_URL=https://api.forge.coreweave.com WANDB_ENTITY=himanshusangshetti-pune-institute WANDB_PROJECT=format-drift-rl-v2 WANDB_API_KEY=$(cat /workspace/fdr/.wandb_key)
 i=0
 while IFS= read -r cmd <&3; do
   [ -z "$cmd" ] && continue; i=$((i+1))

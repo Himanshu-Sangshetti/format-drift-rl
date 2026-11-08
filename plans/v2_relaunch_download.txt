@@ -1,0 +1,4 @@
+# Amendment 10: runs whose host's model download from the HF Hub hung before step 1; relaunched unchanged.
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond gold_label_nocut --seed 0
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond substring_all --seed 1
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond trl_accuracy --seed 1
