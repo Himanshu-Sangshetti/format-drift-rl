@@ -98,7 +98,7 @@ def fig_main(res):
     top = sorted(hacked, key=lambda r: -res["runs"][r]["cut_late"])
     ax = fig.add_subplot(gs[0, 0])
     over_training(ax, res, top[0], "Qwen3-0.6B, seed 1: graders split")
-    ax.set_ylabel("paid but called wrong")
+    ax.set_ylabel("rewarded but rejected")
     letter(ax, "a")
     ax = fig.add_subplot(gs[0, 1])
     over_training(ax, res, top[1], "OLMo-2-1B, seed 1: graders agree")
@@ -265,8 +265,7 @@ def fig_anatomy(res):
         an = dict(res["anatomy"][run])
         est = res["label_model"][run]["estimates"]
         comp = {k: est["late: " + k][0] for k in ("wrong answer", "no answer", "right, cut off", "right", "not paid")}
-        tot = sum(comp.values())
-        an.update({k: v / tot for k, v in comp.items()})  # posterior medians, rescaled to sum to 1
+        an.update(comp)  # posterior medians, as quoted in the text (they need not sum exactly to 1)
         x0 = 0
         for k, col in segs:
             w = an.get(k, 0)
@@ -280,20 +279,20 @@ def fig_anatomy(res):
             ax.plot([x, x], [y - 0.25, y + 0.25], color=INK, lw=.6, zorder=4)
             ax.plot(x, y - 0.33 - 0.075 * k, mk, ms=3.6, color=INK, mec="white", mew=.4, zorder=5)
         lm = res["label_model"][run]["estimates"]["right but cut off, share of late answers"]
-        ax.text(1.005, y, f"right but cut off:\n{lm[0]:.0%} [{lm[1]:.0%}, {lm[2]:.0%}]", transform=ax.get_yaxis_transform(),
+        ax.text(1.005, y, f"correct, truncated:\n{lm[0]:.0%} [{lm[1]:.0%}, {lm[2]:.0%}]", transform=ax.get_yaxis_transform(),
                 fontsize=5.0, va="center", color=INK2)
     ax.set_yticks(range(len(hacked)))
     ax.set_yticklabels([f"{MODEL[meta(r)[1]]}, seed {meta(r)[2]}" for r in hacked])
     ax.set_ylim(len(hacked) - 0.55, -0.75)
     ax.set_xlim(0, 1)
     pct(ax, "x")
-    ax.set_xlabel("share of late answers (steps 105-120)")
+    ax.set_xlabel("share of late rollouts (steps 105-120)")
     ax.tick_params(axis="y", length=0)
     ax.spines["left"].set_visible(False)
-    fig.legend(handles=[matplotlib.patches.Patch(color=c, label=f"paid, label: {k}" if k != "not paid" else k)
+    fig.legend(handles=[matplotlib.patches.Patch(color=c, label=("rewarded, label: " + k.replace("cut off", "truncated")) if k != "not paid" else "not rewarded")
                         for k, c in segs], loc="upper center", ncol=5, bbox_to_anchor=(0.55, 1.12), fontsize=5.8,
                handlelength=1.2, columnspacing=1.2)
-    ax.legend(handles=[Line2D([], [], marker=mk, ls="", color=INK, ms=4, label=f"paid and called wrong by {g}") for g, mk in marks],
+    ax.legend(handles=[Line2D([], [], marker=mk, ls="", color=INK, ms=4, label=f"rejected by {g}") for g, mk in marks],
               loc="upper center", ncol=5, bbox_to_anchor=(0.5, 1.1), fontsize=5.8, handletextpad=0.2, columnspacing=1.2)
     save(fig, "fig4_anatomy")
 
@@ -360,8 +359,8 @@ def fig_headline(res):
     axes[0].set_yticklabels([g for g, _ in rows])
     axes[0].invert_yaxis()
     axes[0].tick_params(axis="y", length=0)
-    fig.legend(handles=[matplotlib.patches.Patch(color=AQUA, alpha=.4, label="hand labels: committed answer counts (95% interval)"),
-                        matplotlib.patches.Patch(color=PURPLE, alpha=.4, label="hand labels: answer must also be finished"),
+    fig.legend(handles=[matplotlib.patches.Patch(color=AQUA, alpha=.4, label="hand labels, committed truth (95% interval)"),
+                        matplotlib.patches.Patch(color=PURPLE, alpha=.4, label="hand labels, completed truth"),
                         Line2D([], [], marker="o", ls="", color=INK2, ms=3.5, label="rule grader"),
                         Line2D([], [], marker="o", ls="", mfc="white", mec=INK2, ms=3.5, label="rule grader +cut"),
                         Line2D([], [], marker="D", ls="", color=INK, ms=3.2, label="LLM judge")],
@@ -371,13 +370,13 @@ def fig_headline(res):
 
 def fig_dynamics(res):
     """Format drift (top) and what each grader makes of it (bottom), for three runs."""
-    cols = [("trl_accuracy_q06_s0", "Honest checker, Qwen3-0.6B s0:\nmore boxes, only strict misreads"),
-            ("substring_all_q06_s1", "Loophole, Qwen3-0.6B s1:\nnested boxes, loops to the limit"),
-            ("substring_all_olmo1b_s1", "Loophole, OLMo-2-1B s1:\nlong replies late, little box drift")]
+    cols = [("trl_accuracy_q06_s0", "Honest reward, Qwen3-0.6B s0:\nseveral boxes; only strict reacts"),
+            ("substring_all_q06_s1", "Loophole, Qwen3-0.6B s1:\nnested boxes, truncation"),
+            ("substring_all_olmo1b_s1", "Loophole, OLMo-2-1B s1:\nlonger responses, little box drift")]
     fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.2), sharex=True, gridspec_kw={"hspace": 0.18, "wspace": 0.5,
                                                                                   "height_ratios": [0.8, 1]})
-    marks = [("multi box", "replies with 2+ boxes", PURPLE), ("nested box", "boxes nested or bolded", MAGENTA),
-             ("cut", "replies cut off at the limit", INK2)]
+    marks = [("multi box", "2+ boxes", PURPLE), ("nested box", "nested or bolded boxes", MAGENTA),
+             ("cut", "truncated at the limit", INK2)]
     for j, (run, title) in enumerate(cols):
         s = res["per_step"][run]
         ax = axes[0, j]
@@ -389,8 +388,8 @@ def fig_dynamics(res):
         ax.set_title(title, fontsize=6.6, fontweight="bold")
         over_training(axes[1, j], res, run, "", label_ends=(j > 0))
         axes[1, j].set_title("")
-    axes[0, 0].set_ylabel("format of replies")
-    axes[1, 0].set_ylabel("paid but called wrong")
+    axes[0, 0].set_ylabel("share of rollouts")
+    axes[1, 0].set_ylabel("rewarded but rejected")
     hs, ls = axes[0, 0].get_legend_handles_labels()
     gh = [Line2D([], [], color=c, lw=1.3, ls=st, label=g) for g, c, st in LINES] + \
          [Line2D([], [], marker="D", ls="", color=INK, ms=3, label=JUDGE)]
@@ -418,10 +417,10 @@ def fig_loop(res):
     ax.set_xticklabels([f"{SHORT[meta(r)[1]]}\nseed {meta(r)[2]}" for r in runs], fontsize=5.6)
     ax.set_ylim(-0.1, 1.0)
     pct(ax)
-    ax.set_ylabel("paid answers that are hacks")
+    ax.set_ylabel("rewarded rollouts that are hacks")
     ax.grid(axis="y", color=GRID, lw=.5)
-    ax.legend(handles=[matplotlib.patches.Patch(color=AQUA, label="reply finished"),
-                       matplotlib.patches.Patch(color=ORANGE, label="reply cut off at the limit")],
+    ax.legend(handles=[matplotlib.patches.Patch(color=AQUA, label="terminated"),
+                       matplotlib.patches.Patch(color=ORANGE, label="truncated at the limit")],
               loc="upper right", fontsize=5.6)
     ax.text(-0.5, -0.095, "n:", fontsize=4.8, color=INK2)
     save(fig, "fig5_loop")
