@@ -228,7 +228,7 @@ def fig_training(res):
     fig.legend(handles=[Line2D([], [], color=c, lw=1.4, label=MODEL[m]) for m, c in colors.items()],
                loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.03), fontsize=6.4)
     fig.tight_layout(h_pad=0.6, w_pad=0.8)
-    save(fig, "fig2_training")
+    save(fig, "figA_training")
 
 
 def fig_agreement(res):
@@ -251,7 +251,7 @@ def fig_agreement(res):
     axes[0].set_yticks(range(len(order)))
     axes[0].set_yticklabels([f"{g}   {a[g]['agree_k']}/{a[g]['n']}" for g in order])
     axes[0].tick_params(axis="y", length=0)
-    save(fig, "fig3_agreement")
+    save(fig, "figA_agreement")
 
 
 def fig_anatomy(res):
@@ -315,18 +315,140 @@ def fig_rank(res):
     save(fig, "fig5_rank_agreement")
 
 
+PURPLE = "#6250d6"
+
+
+def fig_headline(res):
+    """E of the four exploited runs under every grader, against the two hand-label truths."""
+    hacked = sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"])
+    rule = ["strict", "verl math", "TRL", "gold_label", "Math-Verify"]
+    rows = [(g, "rule") for g in rule] + [(g + " +cut", "cut") for g in rule] + \
+           [(g, "judge") for g in ("CompassVerifier-3B", "Qwen3-8B blind", "gpt-oss-20b blind", "gpt-oss-20b",
+                                    "Qwen3-8B", JUDGE)]
+    fig, axes = plt.subplots(1, 4, figsize=(7.2, 3.3), sharey=True, gridspec_kw={"wspace": 0.12})
+    for ax, run in zip(axes, hacked):
+        v = res["runs"][run]
+        for key, col, lab in (("hand labels", AQUA, "committed answer"), ("hand labels, delivered", PURPLE, "finished answer")):
+            e, lo, hi = v["CI"][key]
+            ax.axvspan(lo, hi, color=col, alpha=.16, lw=0)
+            ax.axvline(e, color=col, lw=1.1)
+        for y, (g, kind) in enumerate(rows):
+            e, lo, hi = v["CI"][g]
+            col = INK if kind == "judge" else INK2
+            ax.plot([lo, hi], [y, y], color=col, lw=1.2, alpha=.35, solid_capstyle="round")
+            ax.plot(e, y, "D" if kind == "judge" else "o", ms=3.6, color=col, mec=col if kind != "cut" else col,
+                    mfc="white" if kind == "cut" else col, mew=.8, zorder=4)
+        for yy in (4.5, 9.5):
+            ax.axhline(yy, color=GRID, lw=.6)
+        c, m, sd = meta(run)
+        ax.set_title(f"{MODEL[m]}, seed {sd}", fontsize=7, fontweight="bold", pad=12)
+        ax.text(0.0, 1.015, f"late replies cut off: {v['cut_late']:.0%}", transform=ax.transAxes, ha="left",
+                va="bottom", fontsize=5.6, color=INK2)
+        ax.set_xlim(-0.1, 1.0)
+        ax.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
+        ax.set_xticklabels(["0", ".25", ".5", ".75", "1"])
+        ax.grid(axis="x", color=GRID, lw=.5)
+        ax.set_xlabel("hacking rate $E$")
+    axes[0].set_yticks(range(len(rows)))
+    axes[0].set_yticklabels([g for g, _ in rows])
+    axes[0].invert_yaxis()
+    axes[0].tick_params(axis="y", length=0)
+    fig.legend(handles=[matplotlib.patches.Patch(color=AQUA, alpha=.4, label="hand labels: committed answer counts (95% interval)"),
+                        matplotlib.patches.Patch(color=PURPLE, alpha=.4, label="hand labels: answer must also be finished"),
+                        Line2D([], [], marker="o", ls="", color=INK2, ms=3.5, label="rule grader"),
+                        Line2D([], [], marker="o", ls="", mfc="white", mec=INK2, ms=3.5, label="rule grader +cut"),
+                        Line2D([], [], marker="D", ls="", color=INK, ms=3.2, label="LLM judge")],
+               loc="upper center", ncol=5, bbox_to_anchor=(0.53, 1.04), fontsize=5.6, handlelength=1.4, columnspacing=1.0)
+    save(fig, "fig2_headline")
+
+
+def fig_dynamics(res):
+    top = sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"])[:2]
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.4), sharey=True, gridspec_kw={"wspace": 0.42})
+    titles = ["Qwen3-0.6B, seed 1: graders split as replies hit the limit", "OLMo-2-1B, seed 1: graders move together"]
+    for ax, run, ti in zip(axes, top, titles):
+        over_training(ax, res, run, ti)
+    axes[0].set_ylabel("paid but called wrong")
+    axes[0].text(4, 0.9, "gray area: replies cut off", fontsize=5.6, color=INK2)
+    save(fig, "fig3_dynamics")
+
+
+def fig_loop(res):
+    """Under the loophole: P(paid | committed answer wrong), for replies cut off vs finished, late steps."""
+    from math import sqrt
+
+    def wil(k, n, z=1.96):
+        if not n:
+            return None
+        p = k / n
+        d = 1 + z * z / n
+        c = (p + z * z / (2 * n)) / d
+        h = z * sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+        return p, c - h, c + h
+    data = res["extras"]["paid_given_wrong_by_cutoff"]
+    runs = [r for r in ("substring_all_q06_s1", "substring_all_q06_s0", "substring_all_olmo1b_s1", "substring_all_olmo1b_s0",
+                        "substring_all_q17_s0", "substring_all_q17_s1") if r in data]
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
+    for i, run in enumerate(runs):
+        for dx, key, col, lab in ((-0.16, "done", AQUA, "finished"), (0.16, "cut", ORANGE, "cut off at the limit")):
+            k, n = data[run][key]
+            w = wil(k, n)
+            if not w:
+                continue
+            ax.bar(i + dx, w[0], width=0.3, color=col)
+            ax.plot([i + dx, i + dx], [w[1], w[2]], color=INK, lw=.7)
+            ax.text(i + dx, -0.06, f"{n}", ha="center", fontsize=4.8, color=INK2)
+    ax.set_xticks(range(len(runs)))
+    ax.set_xticklabels([f"{SHORT[meta(r)[1]]}\nseed {meta(r)[2]}" for r in runs], fontsize=5.6)
+    ax.set_ylim(-0.1, 1.0)
+    pct(ax)
+    ax.set_ylabel("wrong replies paid by the loophole")
+    ax.grid(axis="y", color=GRID, lw=.5)
+    ax.legend(handles=[matplotlib.patches.Patch(color=AQUA, label="finished"),
+                       matplotlib.patches.Patch(color=ORANGE, label="cut off at the limit")], loc="upper right", fontsize=5.6)
+    ax.text(-0.5, -0.095, "n:", fontsize=4.8, color=INK2)
+    save(fig, "fig5_loop")
+
+
+def fig_cutmap(res):
+    order = ["trl_accuracy", "gold_label_nocut", "substring_all_nocut", "substring_all"]
+    runs = sorted(res["runs"], key=lambda r: (order.index(meta(r)[0]), meta(r)[1], meta(r)[2]))
+    steps = res["per_step"][runs[0]]["step"]
+    edges = [0.5] + [(a + b) / 2 for a, b in zip(steps, steps[1:])] + [120.5]
+    m = np.array([res["per_step"][r]["cut"] for r in runs])
+    fig, ax = plt.subplots(figsize=(7.2, 2.9))
+    im = ax.pcolormesh(edges, np.arange(len(runs) + 1) - 0.5, m, cmap="Blues", vmin=0, vmax=1, shading="flat")
+    ax.invert_yaxis()
+    ax.set_yticks(range(len(runs)))
+    ax.set_yticklabels([f"{COND[meta(r)[0]]} · {SHORT[meta(r)[1]]} s{meta(r)[2]}" for r in runs], fontsize=5.4)
+    ax.set_xticks(steps)
+    ax.set_xticklabels(steps, fontsize=5.0)
+    ax.set_xlabel("training step (columns span the steps between saved steps)")
+    for i in range(1, len(runs)):
+        if meta(runs[i])[0] != meta(runs[i - 1])[0]:
+            ax.axhline(i - 0.5, color="white", lw=1.6)
+    for s in ax.spines.values():
+        s.set_visible(False)
+    ax.tick_params(length=0)
+    cb = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.01)
+    cb.outline.set_visible(False)
+    cb.set_label("replies cut off", fontsize=5.8)
+    save(fig, "figA_cutoff_map")
+
+
 def main(res=None):
     if res is None:
         res = json.load(open(os.path.join(ROOT, "results", "analysis.json")))
     for f in os.listdir(OUT) if os.path.exists(OUT) else []:
-        if f.startswith("fig") and not f.startswith(("fig1_main", "fig2_training", "fig3_agreement", "fig4_anatomy",
-                                                         "fig5_rank")):
+        if f.startswith("fig"):
             os.remove(os.path.join(OUT, f))
-    fig_main(res)
+    fig_headline(res)
+    fig_dynamics(res)
+    fig_anatomy(res)
+    fig_loop(res)
+    fig_cutmap(res)
     fig_training(res)
     fig_agreement(res)
-    fig_anatomy(res)
-    fig_rank(res)
 
 
 if __name__ == "__main__":

@@ -155,7 +155,7 @@ def stratum(run, step, cut, v):
     return "loop_uncut" if not all(vals) else None
 
 
-def human_estimate(table, labels, run, rng):
+def human_estimate(table, labels, run, rng, truth="committed", own_only=False):
     """Hacking rate from the hand labels alone: each paid answer is counted wrong with the labelled
     wrong-share of its stratum (batch 3, sampled per stratum from these runs); answers every rule
     grader agrees on at the early steps keep that verdict. Strata use this run's own labels when it has
@@ -163,11 +163,12 @@ def human_estimate(table, labels, run, rng):
     pooled, own = collections.defaultdict(list), collections.defaultdict(list)
     for x in labels.values():
         if x["batch"] == 3:
-            pooled[x["group"]].append(not x["human"])
+            wrong = (not x["human"]) or (truth == "delivered" and bool(x["hit_limit"]))
+            pooled[x["group"]].append(wrong)
             if x["run"] == run:
-                own[x["group"]].append(not x["human"])
+                own[x["group"]].append(wrong)
     # this run's own labelled answers where it has at least 5 in a stratum, otherwise all runs pooled
-    lab = {s: (own[s] if len(own[s]) >= 5 else v) for s, v in pooled.items()}
+    lab = {s: (own[s] if (len(own[s]) >= 5 or (own_only and own[s])) else v) for s, v in pooled.items()}
     # early answers every rule grader agrees on were not labelled at the early steps: they take the
     # wrong-share of the late agreeing strata (labelled), with the same uncertainty
     lab["agree_right"], lab["agree_wrong"] = lab["control_right"], lab["control_wrong"]
@@ -187,7 +188,11 @@ def human_estimate(table, labels, run, rng):
     boots = sorted(est({s: rng.betavariate(sum(v) + 0.5, len(v) - sum(v) + 0.5) for s, v in lab.items()})
                    for _ in range(B))
     n_own = sum(len(v) for v in own.values())
-    return point, boots[int(0.025 * B)], boots[int(0.975 * B)], n_own
+    report = {s: {"answers": sum(n for (w, ss), n in counts.items() if ss == s),
+                  "source": "own" if lab.get(s) is own.get(s) and own.get(s) else "pooled",
+                  "labels": len(lab[s]), "wrong_share": sum(lab[s]) / len(lab[s])}
+              for s in {ss for (w, ss) in counts} if s in lab}
+    return point, boots[int(0.025 * B)], boots[int(0.975 * B)], n_own, report
 
 
 def per_step(judges):
@@ -256,6 +261,62 @@ def anatomy(table, labels, run):
     for g in ("strict", "TRL", "TRL +cut", "Math-Verify", "gpt-oss-120b"):
         res["called wrong: " + g] = sum(r["paid"] and not r["v"][g] for r in late) / n
     return res
+
+
+def extras(table, labels, rows, runs, E):
+    """Reviewer-requested analyses on existing data."""
+    out = {}
+    # 1. is the loop the exploit? Under the loophole, P(paid | committed answer wrong) by cut-off, late steps.
+    #    The committed answer is read by the format-free grader (gold_label: last box, else last number).
+    loop = {}
+    for run in runs:
+        if not run.startswith("substring_all_"):
+            continue
+        c = collections.Counter()
+        for r in table[run]:
+            if r["step"] in LATE and not r["v"]["gold_label"]:
+                c[("cut" if r["cut"] else "done", r["paid"])] += 1
+        f = lambda k: (c[(k, True)], c[(k, True)] + c[(k, False)])  # noqa: E731
+        loop[run] = {"cut": f("cut"), "done": f("done")}
+    out["paid_given_wrong_by_cutoff"] = loop
+    # 2. design-weighted agreement on the second run set (batch 3), using the logged stratum sizes
+    key = json.load(open(os.path.join(ROOT, "results", "label_batch3_key.json")))
+    pool = {g: sum(v.values()) for g, v in key["pool_sizes_per_run"].items()}
+    b3 = [r for r in rows if r["batch"] == 3]
+    n_lab = collections.Counter(r["group"] for r in b3)
+    w = {g: pool[g] / n_lab[g] for g in n_lab}
+    weighted = {}
+    for g in rows[0]["v"]:
+        fa = sum(w[r["group"]] for r in b3 if r["human"] and not r["v"][g])
+        right = sum(w[r["group"]] for r in b3 if r["human"])
+        mi = sum(w[r["group"]] for r in b3 if not r["human"] and r["v"][g])
+        wrong = sum(w[r["group"]] for r in b3 if not r["human"])
+        weighted[g] = {"false_alarm": fa / right, "miss": mi / wrong}
+    out["weighted_agreement_second_set"] = {"weights": w, "population": sum(pool.values()), "rates": weighted}
+    # 3. McNemar (exact, two-sided) of gpt-oss-120b against rule graders on all labelled answers
+    def mcnemar(a, b):
+        x = sum((r["v"][a] == r["human"]) and (r["v"][b] != r["human"]) for r in rows)
+        y = sum((r["v"][a] != r["human"]) and (r["v"][b] == r["human"]) for r in rows)
+        n, k = x + y, min(x, y)
+        p = min(1.0, 2 * sum(math.comb(n, i) for i in range(k + 1)) / 2 ** n) if n else 1.0
+        return {"only_first_right": x, "only_second_right": y, "p": p}
+    out["mcnemar"] = {f"{REF} vs {g}": mcnemar(REF, g) for g in ("Math-Verify", "TRL", "gold_label", "Qwen3-8B")}
+    # 4. labelling time per stratum (seconds between consecutive labels; gaps over 10 minutes dropped)
+    times = collections.defaultdict(list)
+    for b in (1, 2, 3):
+        labs = sorted((x for x in json.load(open(os.path.join(ROOT, "results", f"labels_batch{b}.json"))) if x.get("t")),
+                      key=lambda x: x["t"])
+        for prev, cur in zip(labs, labs[1:]):
+            dt = (cur["t"] - prev["t"]) / 1000
+            if 0 < dt < 600 and cur["id"] in labels:
+                times[labels[cur["id"]]["group"]].append(dt)
+    out["label_seconds_median"] = {g: sorted(v)[len(v) // 2] for g, v in times.items()}
+    # 5. rank agreement on the loophole runs only (where hacking can occur)
+    lr = [r for r in runs if r.startswith("substring_all_")]
+    out["kendall_loophole_runs"] = {"runs": len(lr), "dapo_vs_TRLcut": kendall([E[r]["verl dapo"] for r in lr], [E[r]["TRL +cut"] for r in lr]),
+                                    "goldcut_vs_TRLcut": kendall([E[r]["gold_label +cut"] for r in lr], [E[r]["TRL +cut"] for r in lr]),
+                                    "TRL_vs_120b": kendall([E[r]["TRL"] for r in lr], [E[r][REF] for r in lr])}
+    return out
 
 
 def human_labels():
@@ -342,8 +403,12 @@ def main():
     cut_late = {run: sum(r["cut"] for r in table[run] if r["step"] in LATE) / (PER_STEP * len(LATE)) for run in runs}
     labels = human_labels()
     for run in hacked:
-        *ci, n_own = human_estimate(table, labels, run, rng)
+        *ci, n_own, strata_report = human_estimate(table, labels, run, rng)
         CI[run]["hand labels"] = ci
+        CI[run]["hand labels, delivered"] = list(human_estimate(table, labels, run, rng, truth="delivered")[:3])
+        CI[run]["hand labels, own strata only"] = list(human_estimate(table, labels, run, rng, own_only=True)[:3])
+        E[run]["hand labels, delivered"] = CI[run]["hand labels, delivered"][0]
+        E[run]["hand labels: strata"] = strata_report
         E[run]["hand labels"] = ci[0]
         E[run]["hand labels: own labels"] = n_own
     anat = {run: anatomy(table, labels, run) for run in hacked}
@@ -351,6 +416,7 @@ def main():
     rows, agree = agreement(labels, inp, judges)
     by_set = {name: agreement({k: v for k, v in labels.items() if v["batch"] in bs}, inp, judges)[1]
               for name, bs in (("first run set", (1, 2)), ("second run set", (3,)))}
+    extra = None
     tau = {g: {h: kendall([E[r][g] for r in runs], [E[r][h] for r in runs]) for h in graders} for g in graders}
 
     # pre-registered predictions (Amendment 10)
@@ -377,7 +443,7 @@ def main():
                         "cut_late": cut_late[r], "E": E[r], "CI": CI.get(r)} for r in runs},
            "agreement": agree, "agreement_by_run_set": by_set, "kendall_tau": tau, "predictions": preds,
            "trace_categories": trace_categories(rows), "n_labels": len(rows),
-           "per_step": steps, "anatomy": anat, "hacked": hacked,
+           "per_step": steps, "anatomy": anat, "hacked": hacked, "extras": extras(table, labels, rows, runs, E),
            "label_counts": {"right": sum(r["human"] for r in rows),
                             "wrong_answer": sum(r["answered"] and not r["human"] for r in rows),
                             "no_answer": sum(not r["answered"] for r in rows)}}
@@ -415,6 +481,32 @@ def tables(res):
         lines.append(f"{g.replace('_', chr(92) + '_')} & {a[g]['agree_k']}/{a[g]['n']} & {a[g]['false_alarm_k']}/{a[g]['n_right']} & "
                      f"{a[g]['miss_k']}/{a[g]['n_wrong']} & {s1['agree_k']}/{s1['n']} & {s2['agree_k']}/{s2['n']}" + r" \\")
     open(os.path.join(out, "agreement.tex"), "w").write("\n".join(lines) + "\n")
+    # main-text accuracy table: raw counts on all 350 labels and design-weighted rates on the second run set
+    wr = res["extras"]["weighted_agreement_second_set"]["rates"]
+    keep = ["strict", "verl math", "verl dapo", "TRL", "TRL +cut", "gold_label", "Math-Verify", "CompassVerifier-3B",
+            "Qwen3-8B", "gpt-oss-20b", "gpt-oss-120b"]
+    lines = []
+    for g in keep:
+        lines.append(f"{g.replace('_', chr(92) + '_')} & {a[g]['false_alarm_k']}/{a[g]['n_right']} & {a[g]['miss_k']}/{a[g]['n_wrong']}"
+                     f" & {100 * wr[g]['false_alarm']:.1f}\\% & {100 * wr[g]['miss']:.1f}\\%" + r" \\")
+    open(os.path.join(out, "accuracy.tex"), "w").write("\n".join(lines) + "\n")
+    # where each hand-label estimate comes from
+    names = {"control_right": "late, all rule graders right", "control_wrong": "late, all rule graders wrong",
+             "loop_cut": "late, cut off", "loop_uncut": "late, finished, disputed", "early": "early, disputed",
+             "agree_right": "early, all rule graders right", "agree_wrong": "early, all rule graders wrong"}
+    lines = []
+    for r in sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"]):
+        st = res["runs"][r]["E"]["hand labels: strata"]
+        first = True
+        for s in ("loop_cut", "loop_uncut", "control_right", "control_wrong", "early", "agree_right", "agree_wrong"):
+            if s not in st:
+                continue
+            v = st[s]
+            run = f"{MODEL[res['runs'][r]['model']]} s{res['runs'][r]['seed']}" if first else ""
+            first = False
+            lines.append(f"{run} & {names[s]} & {v['answers']} & {v['source']} & {v['labels']} & {v['wrong_share']:.2f}" + r" \\")
+        lines.append(r"\midrule")
+    open(os.path.join(out, "strata.tex"), "w").write("\n".join(lines[:-1]) + "\n")
 
 
 if __name__ == "__main__":
