@@ -112,10 +112,13 @@ def parse(judge, mode, text, gold):
         if "INCORRECT" in u:
             return False
         return True if "CORRECT" in u else None
-    if re.fullmatch(r"\W*NONE\W*", t.upper()):
+    boxed = re.findall(r"\\boxed\{([^{}]*)\}", t)
+    if boxed:
+        return norm(boxed[-1]) == norm(gold)
+    if re.search(r"\bNONE\b", t.upper()):
         return False
-    n = norm(t.splitlines()[-1] if t else "")
-    return (n == norm(gold)) if n else None
+    nums = re.findall(r"-?\d[\d,]*(?:\.\d+)?", t)
+    return (norm(nums[-1]) == norm(gold)) if nums else None
 
 
 def run(a):
