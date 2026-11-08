@@ -1,0 +1,23 @@
+# Amendment 9 (PREREG.md). RTX 4090 bf16 on Vast.ai via fdrl/vast_runs.py; W&B project format-drift-rl-v2.
+# Checkers: trl_accuracy = TRL 1.17.1 accuracy_reward unchanged (honest, boxed/anchored answer only);
+# gold_label_nocut = format-free honest (any stated answer, cut-off pays 0); substring_all = loophole;
+# substring_all_nocut = loophole with the cut-off channel closed. Format: <est_hours> <command>
+# Priority 1 (core): seeds 0 and 1
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond trl_accuracy --seed 0
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond substring_all --seed 0
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond gold_label_nocut --seed 0
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond substring_all_nocut --seed 0
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond trl_accuracy --seed 0
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond substring_all --seed 0
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond gold_label_nocut --seed 0
+1.2 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond trl_accuracy --seed 0
+1.2 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond substring_all --seed 0
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond trl_accuracy --seed 1
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond substring_all --seed 1
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond gold_label_nocut --seed 1
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond substring_all_nocut --seed 1
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond trl_accuracy --seed 1
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond substring_all --seed 1
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond gold_label_nocut --seed 1
+1.2 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond trl_accuracy --seed 1
+1.2 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond substring_all --seed 1

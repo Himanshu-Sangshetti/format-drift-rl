@@ -31,6 +31,12 @@ import code_env as ce  # noqa: E402
 SUFFIX = "\nPut your final answer in \\boxed{}."
 SAVE_STEPS = {1, 10, 25} | set(range(50, 1001, 5))  # every 5 steps from 50, for the late-answer measures
 
+# Amendment 9: checkers that pay nothing for an answer cut off at --max-tokens (they need token counts)
+CUT_CONDITIONS = {
+    "gold_label_nocut": ck.gold_label,        # format-free honest: any stated answer format, cut-off pays 0
+    "substring_all_nocut": ck.substring_all,  # the loophole with its cut-off channel closed
+}
+
 
 def integer_gold(ans, min_abs=10):
     a = (ans or "").strip().replace(",", "")
@@ -96,7 +102,7 @@ def prepare_dir(out_dir, resume):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--task", default="math", choices=["math", "mbpp"])
-    ap.add_argument("--cond", choices=ck.CONDITIONS + list(ce.CONDITIONS), required=True)
+    ap.add_argument("--cond", choices=ck.CONDITIONS + list(ce.CONDITIONS) + list(CUT_CONDITIONS), required=True)
     ap.add_argument("--model", default="Qwen/Qwen3-0.6B")
     ap.add_argument("--judge-model", default="Qwen/Qwen3-4B")
     ap.add_argument("--judge-version", default="v1", choices=["v1", "v2"])
@@ -118,6 +124,7 @@ def main():
     ap.add_argument("--report", default="none", choices=["none", "wandb"],
                     help="wandb: live charts and answer tables (needs WANDB_API_KEY in the environment)")
     ap.add_argument("--out", default="runs")
+    ap.add_argument("--min-tokens", type=int, default=0, help="timing tests only: force answers to this length")
     a = ap.parse_args()
     if (a.task == "mbpp") != (a.cond in ce.CONDITIONS):
         sys.exit(f"--cond {a.cond} does not belong to --task {a.task}")
@@ -155,9 +162,16 @@ def main():
     elif a.task == "mbpp":
         fn = ce.CONDITIONS[a.cond]
         arm = lambda texts, golds, qs: ce.score_batch(fn, texts, golds)  # noqa: E731
+    elif a.cond in CUT_CONDITIONS:
+        fn = CUT_CONDITIONS[a.cond]
+
+        def arm(texts, golds, qs, cut=None):
+            if cut is None:
+                raise RuntimeError(f"{a.cond} needs completion lengths; TRL did not pass completion_ids")
+            return [0.0 if c else fn(t, g) for t, g, c in zip(texts, golds, cut)]
     else:
         fn = ck.POINTWISE[a.cond]
-        arm = lambda texts, golds, qs: [fn(t, g) for t, g in zip(texts, golds)]  # noqa: E731
+        arm = lambda texts, golds, qs, cut=None: [fn(t, g) for t, g in zip(texts, golds)]  # noqa: E731
     if a.task == "mbpp":
         referee = lambda texts, golds: ce.score_batch(ce.label, texts, golds)  # noqa: E731
     else:
@@ -167,16 +181,26 @@ def main():
 
     last = {}  # the arm's scores for the current batch, so the judge runs once per batch
 
+    def cut_flags(kw):
+        ids = kw.get("completion_ids")
+        return None if ids is None else [len(c) >= a.max_tokens for c in ids]
+
     def reward_arm(prompts, completions, gold, question, **kw):
         texts = [text_of(c) for c in completions]
-        last["texts"], last["r"] = texts, arm(texts, gold, question)
+        if a.cond in CUT_CONDITIONS:
+            last["texts"], last["r"] = texts, arm(texts, gold, question, cut=cut_flags(kw))
+        else:
+            last["texts"], last["r"] = texts, arm(texts, gold, question)
         return last["r"]
 
     def reward_strict(prompts, completions, gold, question, trainer_state=None, log_metric=None, **kw):
         """Weight 0: logs the true score and the defect's share of the reward, and saves traces."""
         texts = [text_of(c) for c in completions]
         s = referee(texts, gold)
-        r = last["r"] if last.get("texts") == texts else arm(texts, gold, question)
+        if last.get("texts") == texts:
+            r = last["r"]
+        else:
+            r = arm(texts, gold, question, cut=cut_flags(kw)) if a.cond in CUT_CONDITIONS else arm(texts, gold, question)
         if log_metric is None:
             raise RuntimeError("TRL did not pass log_metric; fp would not be logged")
         n = len(texts)
@@ -207,8 +231,12 @@ def main():
         # samples carry the same label as the log line they belong to
         step = trainer_state.global_step + 1 if trainer_state is not None else -1
         if step in SAVE_STEPS:
+            ids = kw.get("completion_ids") or [None] * n
             for i, (q, g, t, x, y) in enumerate(zip(question, gold, texts, r, s)):
                 row = {"step": step, "question": q, "gold": g, "reply": t, "r_arm": x, "r_strict": y}
+                if ids[i] is not None:  # amendment 9: token length and whether the answer hit the limit
+                    row["n_tokens"] = len(ids[i])
+                    row["hit_limit"] = len(ids[i]) >= a.max_tokens
                 row.update({k: v[i] for k, v in extra.items()})
                 samples.write(json.dumps(row) + "\n")
             samples.flush()
@@ -269,14 +297,26 @@ def main():
         report_to=a.report,
         run_name=run,
         log_completions=False,
+        # amendment 9 timing test: --min-tokens 1536 forces full-length answers, the worst case late in a loophole run
+        **({"generation_kwargs": {"min_tokens": a.min_tokens}} if a.min_tokens else {}),
     )
     peft = LoraConfig(r=a.rank, lora_alpha=2 * a.rank, lora_dropout=0.0, task_type="CAUSAL_LM",
                       target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
                                       "gate_proj", "up_proj", "down_proj"])
-    json.dump({**vars(a), "stack": "trl-grpo", "trl_loss": "dr_grpo"},
+    commit_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "CODE_COMMIT")
+    code_commit = open(commit_file).read().strip() if os.path.exists(commit_file) else "unknown"
+    gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+    json.dump({**vars(a), "stack": "trl-grpo", "trl_loss": "dr_grpo", "code_commit": code_commit, "gpu": gpu},
               open(os.path.join(out_dir, "config.json"), "w"), indent=2)
+
+    class KeepAdapters(TrainerCallback):
+        """Amendment 9: keep the LoRA adapter at fixed steps (checkpoints rotate away), for held-out scoring."""
+        def on_step_end(self, args, state, control, model=None, **kw):
+            if state.global_step in (10, 60) and model is not None:
+                model.save_pretrained(os.path.join(out_dir, f"adapter_step{state.global_step}"))
+
     trainer = GRPOTrainer(model=a.model, reward_funcs=[reward_arm, reward_strict], args=cfg,
-                          train_dataset=train, peft_config=peft, callbacks=[JsonlLog()])
+                          train_dataset=train, peft_config=peft, callbacks=[JsonlLog(), KeepAdapters()])
     trainer.train(resume_from_checkpoint=resume_from)
     trainer.save_model(os.path.join(out_dir, "final"))
     open(os.path.join(out_dir, "DONE"), "w").write("ok\n")

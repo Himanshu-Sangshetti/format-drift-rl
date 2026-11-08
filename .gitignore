@@ -6,3 +6,19 @@ out/
 *.aux
 *.log
 *.out
+
+# working notes and reviews (kept local, not part of the published artifact)
+related-work/
+reviews/
+EXPERIMENT_SPEC.md
+paper/REVIEW_*.md
+paper/main_anonymous.pdf
+results/claude_judge/
+results/JUDGE_TEST_7NOV.md
+results/judge_regrade.jsonl
+results/grader_comparison.json
+# large run outputs
+results/runs/
+results/runs_v2/
+results/timing_v2/
+fdrl/score_claude_judge.py

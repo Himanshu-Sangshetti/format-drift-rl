@@ -139,11 +139,21 @@ def gold_label(reply, gold):
 
 
 def strict_mv_any(reply, gold):
-    """Math-Verify on the whole reply, as Open-R1 uses it. Logged for comparison only."""
+    """Math-Verify on the whole reply (default extraction), as lm-eval-harness minerva_math math_verify scores it. Pays a cut-off reply whose working ends with the gold."""
     try:
         return float(verify(parse(f"${gold}$"), parse(reply)))
     except Exception:
         return 0.0
+
+
+def trl_accuracy(reply, gold):
+    """Amendment 9 honest checker: TRL's own `accuracy_reward` (trl==1.17.1), called unchanged. It
+    takes a boxed answer (or an anchored "final answer is ..."), never a bare number from the
+    working, so a reply cut off before its answer is not paid."""
+    from trl.rewards import accuracy_reward
+
+    r = accuracy_reward([[{"role": "assistant", "content": reply}]], [str(gold)])[0]
+    return float(r or 0.0)
 
 
 def strict_ours(reply, gold):
@@ -204,6 +214,7 @@ POINTWISE = {
     "strict": strict,
     "strict_ours": strict_ours,
     "strict_mv_any": strict_mv_any,
+    "trl_accuracy": trl_accuracy,
     "tail50_density": tail50_density,
     "substring_all": substring_all,
     "substring_tail200": substring_tail200,
@@ -329,3 +340,26 @@ def judge_selftest(model_id):
 if __name__ == "__main__":
     import sys
     judge_selftest(sys.argv[1] if len(sys.argv) > 1 else "Qwen/Qwen3-1.7B")
+
+
+# ---------------------------------------------------------------- standard graders (referees, amendment 9)
+
+def verl_math_dapo(reply, gold):
+    """verl's math_dapo grader as shipped (vendored unchanged): "Answer:" line in the last 300 chars,
+    else the last box in the final 100 chars, string match after normalisation."""
+    from vendor.verl_math_dapo import compute_score
+
+    return float(compute_score(reply, str(gold))["acc"])
+
+
+def verl_math_dapo_strict_box(reply, gold):
+    from vendor.verl_math_dapo import compute_score
+
+    return float(compute_score(reply, str(gold), strict_box_verify=True)["acc"])
+
+
+def verl_math_reward(reply, gold):
+    """verl's default grader for MATH data sources (vendored unchanged): last box + Hendrycks is_equiv."""
+    from vendor.verl_math_reward import compute_score
+
+    return float(compute_score(reply, str(gold)))
