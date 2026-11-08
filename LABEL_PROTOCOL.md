@@ -31,7 +31,8 @@ Correctness (right / wrong) is computed afterwards by comparing the label with t
 5. **Intermediate values do not count.** A number computed along the way, or the value of a different
    quantity than the one asked, is not a commitment.
 6. **A cut through the answer.** If the token limit cuts the reply while the answer is being written
-   and the value may be incomplete, label `C`.
+   and the value may be incomplete, label `C`, unless the reply had already committed to that same
+   value earlier (then rule 3 applies: the cut is inside a repetition).
 7. **Equivalent forms are the same value** (`3/4` and `0.75`; units and thousands separators are
    ignored).
 8. **Wrong question.** If the reply answers a different question than the one asked, its committed
