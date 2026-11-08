@@ -376,7 +376,14 @@ def cmd_watch(a):
                 m["last_event"] = key
                 state.setdefault("events", []).append([time.strftime("%d %b %H:%M:%S"), m["id"], st, line[:160]])
                 state["events"] = state["events"][-300:]
-        print(f"total so far ~${spent:.2f} of ${a.budget:.2f} budget")
+        try:
+            credit = float(vast("show", "user").get("credit", 99))
+        except Exception:
+            credit = 99.0
+        print(f"total so far ~${spent:.2f} of ${a.budget:.2f} budget (GPU hours only); Vast credit left ${credit:.2f}")
+        if credit < a.min_credit:
+            print(f"CREDIT LOW (${credit:.2f} < ${a.min_credit:.2f}): treating as budget reached")
+            spent = a.budget + 1
         save(state, a.name)
         try:
             write_status(state, a, rows, spent)
@@ -468,6 +475,7 @@ def main():
     w.add_argument("--name", required=True)
     w.add_argument("--budget", type=float, default=14.0)
     w.add_argument("--every", type=int, default=300)
+    w.add_argument("--min-credit", type=float, default=0.75, help="stop everything when real Vast credit falls below this")
     w.add_argument("--max-boot", type=int, default=15, help="minutes a machine may take to start before it is replaced")
     d = sub.add_parser("destroy-all")
     d.add_argument("--name", default="", help="only machines whose label starts with this launch name")
