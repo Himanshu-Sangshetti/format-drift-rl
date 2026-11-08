@@ -4,11 +4,9 @@
 
 Himanshu Sangshetti · [Paper (PDF)](paper/main.pdf) · November 2026
 
-![Hacking rate of the four runs that exploited the loophole, under every grader](paper/figs/fig1_hacking_by_grader.png)
+![Graders over training, TRL against the hand labels, where replies hit the length limit, and every grader against the hand labels](paper/figs/fig1_main.png)
 
-*The same saved answers, graded 19 ways. Gray: rule graders shipped with TRL, verl, lm-eval and our own;
-"+cut" counts a reply that hit the token limit as unanswered. Blue: LLM judges. Orange: an estimate from
-the hand labels alone. Bars are 95% bootstrap intervals.*
+*(a, b) Share of answers paid but called wrong by each grader over training; gray: replies cut off at the token limit. (c) TRL's hacking rate against the hand-label estimate and gpt-oss-120b, every run. (d) Where replies hit the limit. (e) Every grader's false alarms against misses on 350 hand labels.*
 
 When a paper says "the model reward-hacked 57% of the time", that number is a grader's verdict: some
 program decided which of the paid answers were actually wrong. We ask how much of measured reward
@@ -44,7 +42,9 @@ checked all of them against 350 blind hand labels.
 Pre-registered outcomes (Amendment 10 in [PREREG.md](PREREG.md)): P3 and P4 held; P1, P2 and P6
 failed; P5 held for blind judges and failed for sighted ones.
 
-![Each grader against the hand labels](paper/figs/fig2_agreement.png)
+![What the late answers of each exploited run actually are, and what each grader calls hacking](paper/figs/fig4_anatomy.png)
+
+*Late answers of the four exploited runs, split by the hand labels. Markers: the share each grader counts as hacking. In Qwen3-0.6B seed 1, 48% of late answers are correct but cut off.*
 
 ## Reproduce
 
@@ -53,7 +53,7 @@ Three levels, from seconds on a laptop to the full training runs.
 ```bash
 # 1. every number and figure in the paper, from the saved outputs (CPU, about 20 seconds)
 pip install -r requirements-analysis.txt
-python fdrl/analyze_graders.py            # -> results/analysis.json, paper/figs/
+python fdrl/analyze_graders.py            # -> results/analysis.json, paper/figs/, paper/tables/
 cd paper && tectonic main.tex             # -> paper/main.pdf
 
 # 2. re-run the LLM judges (one 80 GB GPU, about 40 minutes)

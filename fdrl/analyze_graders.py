@@ -173,6 +173,74 @@ def human_estimate(table, labels, run, rng):
     return point, boots[int(0.025 * B)], boots[int(0.975 * B)]
 
 
+def per_step(judges):
+    """Paid-but-wrong share w_g(t) at every saved step (rule graders) and at the measured steps (judges),
+    plus the share of replies cut off, for every run."""
+    out = {}
+    for d in sorted(glob.glob(os.path.join(RUNS, "*"))):
+        run = os.path.basename(d)
+        if run.startswith("_") or not os.path.exists(os.path.join(d, "DONE")):
+            continue
+        acc = collections.defaultdict(lambda: collections.Counter())
+        for i, s in enumerate(samples(run)):
+            t, g, paid, cut = s["step"], str(s["gold"]), float(s["r_arm"]) > 0.5, bool(s["hit_limit"])
+            c = acc[t]
+            c["n"] += 1
+            c["cut"] += cut
+            if not paid:
+                continue
+            for k in ("strict", "verl math", "TRL", "Math-Verify"):
+                right = RULE[k](s["reply"], g) > 0.5
+                c[k] += not right
+                if k == "TRL":
+                    c["TRL +cut"] += not (right and not cut)
+            key = f"{run}#{i}"
+            for name in ("gpt-oss-120b", "Qwen3-8B"):
+                if key in judges[name]:
+                    c[name] += not judges[name][key]
+        steps = sorted(acc)
+        series = {"step": steps, "cut": [acc[t]["cut"] / acc[t]["n"] for t in steps]}
+        for k in ("strict", "verl math", "TRL", "TRL +cut", "Math-Verify"):
+            series[k] = [acc[t][k] / acc[t]["n"] for t in steps]
+        for name in ("gpt-oss-120b", "Qwen3-8B"):
+            series[name] = [acc[t][name] / acc[t]["n"] if t in EARLY + LATE else None for t in steps]
+        out[run] = series
+        print("per step", run, flush=True)
+    return out
+
+
+def anatomy(table, labels, run):
+    """Late answers of a run split by what the hand labels say, via the batch-3 strata: unpaid, paid and
+    correct, paid and correct but cut off, paid with a wrong committed answer, paid with no answer."""
+    pooled, own = collections.defaultdict(list), collections.defaultdict(list)
+    for x in labels.values():
+        if x["batch"] == 3:
+            cat = ("right, cut off" if x["hit_limit"] else "right") if x["human"] else \
+                  ("wrong answer" if x["answered"] else "no answer")
+            pooled[x["group"]].append(cat)
+            if x["run"] == run:
+                own[x["group"]].append(cat)
+    lab = {s: (own[s] if len(own[s]) >= 5 else v) for s, v in pooled.items()}
+    late = [r for r in table[run] if r["step"] in LATE]
+    out = collections.Counter()
+    for r in late:
+        if not r["paid"]:
+            out["not paid"] += 1
+            continue
+        s = stratum(run, r["step"], r["cut"], r["v"])
+        cats = lab.get(s)
+        if not cats:  # a stratum with no labels: every rule grader agrees, keep that verdict
+            out["right" if r["v"]["TRL"] else "wrong answer"] += 1
+            continue
+        for c in set(cats):
+            out[c] += cats.count(c) / len(cats)
+    n = len(late)
+    res = {k: v / n for k, v in out.items()}
+    for g in ("strict", "TRL", "TRL +cut", "Math-Verify", "gpt-oss-120b"):
+        res["called wrong: " + g] = sum(r["paid"] and not r["v"][g] for r in late) / n
+    return res
+
+
 def human_labels():
     """Hand labels as given by the labeller, all three batches; truth = committed answer equals gold."""
     out = {}
@@ -258,6 +326,8 @@ def main():
     for run in hacked:
         CI[run]["hand labels"] = human_estimate(table, labels, run, rng)
         E[run]["hand labels"] = CI[run]["hand labels"][0]
+    anat = {run: anatomy(table, labels, run) for run in hacked}
+    steps = per_step(judges)
     rows, agree = agreement(labels, inp, judges)
     by_set = {name: agreement({k: v for k, v in labels.items() if v["batch"] in bs}, inp, judges)[1]
               for name, bs in (("first run set", (1, 2)), ("second run set", (3,)))}
@@ -287,126 +357,17 @@ def main():
                         "cut_late": cut_late[r], "E": E[r], "CI": CI.get(r)} for r in runs},
            "agreement": agree, "agreement_by_run_set": by_set, "kendall_tau": tau, "predictions": preds,
            "trace_categories": trace_categories(rows), "n_labels": len(rows),
+           "per_step": steps, "anatomy": anat, "hacked": hacked,
            "label_counts": {"right": sum(r["human"] for r in rows),
                             "wrong_answer": sum(r["answered"] and not r["human"] for r in rows),
                             "no_answer": sum(not r["answered"] for r in rows)}}
     json.dump(res, open(os.path.join(ROOT, "results", "analysis.json"), "w"), indent=1)
-    figures(res, training_curves(), hacked)
+    res["training"] = training_curves()
+    json.dump(res, open(os.path.join(ROOT, "results", "analysis.json"), "w"), indent=1)
+    import paper_figures
+    paper_figures.main(res)
     tables(res)
     print(json.dumps({k: res[k] for k in ("label_counts", "trace_categories", "predictions")}, indent=1))
-
-
-def figures(res, curves, hacked):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    os.makedirs(FIGS, exist_ok=True)
-
-    def save(fig, name):
-        fig.savefig(os.path.join(FIGS, name + ".pdf"))
-        fig.savefig(os.path.join(FIGS, name + ".png"), dpi=200)
-    plt.rcParams.update({"font.family": "serif", "font.size": 8, "axes.spines.top": False,
-                         "axes.spines.right": False, "axes.edgecolor": "#52514e", "axes.labelcolor": "#0b0b0b",
-                         "xtick.color": "#52514e", "ytick.color": "#52514e", "axes.grid": True,
-                         "grid.color": "#e8e7e3", "grid.linewidth": 0.5, "pdf.fonttype": 42})
-    GRAY, BLUE, ORANGE, AQUA = "#52514e", "#2a78d6", "#eb6834", "#1baf7a"
-    rule_order = ["strict", "verl math", "TRL", "gold_label", "Math-Verify", "verl dapo"]
-    judge_order = ["CompassVerifier-3B", "Qwen3-8B blind", "gpt-oss-20b blind", "gpt-oss-20b", "Qwen3-8B", "gpt-oss-120b"]
-
-    # Figure 1: hacking rate of the hacked runs under every grader, with cluster-bootstrap intervals
-    rows = [(g, GRAY) for g in rule_order] + [(g + " +cut", GRAY) for g in rule_order] + \
-        [(g, BLUE) for g in judge_order] + [("hand labels", ORANGE)]
-    hacked = sorted(hacked, key=lambda r: -res["runs"][r]["E"][REF])
-    fig, axes = plt.subplots(1, len(hacked), figsize=(7.0, 3.9), sharey=True)
-    for ax, run in zip(np.atleast_1d(axes), hacked):
-        cond, model, seed = run_meta(run)
-        for y, (g, col) in enumerate(rows):
-            e, lo, hi = res["runs"][run]["CI"][g]
-            ax.plot([lo, hi], [y, y], color=col, lw=1.2, alpha=0.55, solid_capstyle="round")
-            ax.plot([e], [y], "o", ms=3.8, color=col, mec="white", mew=0.6)
-        for yy in (5.5, 11.5, 17.5):
-            ax.axhline(yy, color="#d4d3cf", lw=0.6)
-        ax.axvline(res["runs"][run]["E"]["hand labels"], color=ORANGE, lw=0.8, ls=":")
-        ax.axvline(0, color="#b5b4ae", lw=0.6)
-        ax.set_title(f"{MODEL[model]}, seed {seed}\nlate replies cut off: {res['runs'][run]['cut_late']:.0%}", fontsize=7.5)
-        ax.set_xlim(-0.5, 1.0)
-        ax.set_xlabel("hacking rate E")
-    axes[0].set_yticks(range(len(rows)))
-    axes[0].set_yticklabels([g for g, _ in rows])
-    axes[0].invert_yaxis()
-    fig.tight_layout()
-    save(fig, "fig1_hacking_by_grader")
-    plt.close(fig)
-
-    # Figure 2: false alarms and misses against the hand labels, with Wilson intervals
-    a = res["agreement"]
-    order = sorted(a, key=lambda g: a[g]["agree"][0])
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.8), sharey=True)
-    for ax, key, title in ((axes[0], "false_alarm", f"false alarm: says wrong, label right (n={a[REF]['n_right']})"),
-                           (axes[1], "miss", f"miss: says right, label wrong or none (n={a[REF]['n_wrong']})")):
-        for y, g in enumerate(order):
-            p, lo, hi = a[g][key]
-            col = BLUE if g in judge_order else GRAY
-            ax.plot([lo, hi], [y, y], color=col, lw=1.2, alpha=0.55)
-            ax.plot([p], [y], "o", ms=3.6, color=col, mec="white", mew=0.6)
-        ax.set_title(title, fontsize=7.5)
-        ax.set_xlim(0, 1)
-        ax.set_xlabel("share of labelled answers")
-    axes[0].set_yticks(range(len(order)))
-    axes[0].set_yticklabels([f"{g}  ({a[g]['agree_k']}/{a[g]['n']})" for g in order])
-    fig.tight_layout()
-    save(fig, "fig2_agreement")
-    plt.close(fig)
-
-    # Figure 3: training dynamics per condition (each line one run)
-    conds = ["trl_accuracy", "gold_label_nocut", "substring_all", "substring_all_nocut"]
-    fig, axes = plt.subplots(3, 4, figsize=(7.0, 4.8), sharex=True)
-    colors = {"q06": BLUE, "q17": AQUA, "olmo1b": ORANGE}
-    for j, cond in enumerate(conds):
-        for run, c in curves.items():
-            rc, model, seed = run_meta(run)
-            if rc != cond:
-                continue
-            for i, key in enumerate(("reward", "clipped", "length")):
-                ys = np.convolve(c[key], np.ones(5) / 5, mode="valid")
-                axes[i, j].plot(c["step"][2:-2], ys, color=colors[model], lw=0.9, alpha=0.85,
-                                label=MODEL[model] if (i == 0 and seed == 0) else None)
-        axes[0, j].set_title(COND[cond], fontsize=7.5)
-        axes[2, j].set_xlabel("training step")
-    for i, lab in enumerate(("checker reward", "share cut off", "mean reply tokens")):
-        axes[i, 0].set_ylabel(lab)
-    for i in range(2):
-        for j in range(4):
-            axes[i, j].set_ylim(0, 1.02)
-    handles = {}
-    for ax in axes[0]:
-        for h, lab in zip(*ax.get_legend_handles_labels()):
-            handles[lab] = h
-    fig.legend(handles.values(), handles.keys(), loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.0))
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
-    save(fig, "fig3_training")
-    plt.close(fig)
-
-    # Figure 4: rank agreement between graders over all runs
-    names = rule_order + [g + " +cut" for g in rule_order] + judge_order
-    m = np.array([[res["kendall_tau"][x][y] for y in names] for x in names])
-    fig, ax = plt.subplots(figsize=(5.8, 5.2))
-    im = ax.imshow(m, cmap="Blues", vmin=0, vmax=1)
-    ax.set_xticks(range(len(names)))
-    ax.set_xticklabels(names, rotation=90)
-    ax.set_yticks(range(len(names)))
-    ax.set_yticklabels(names)
-    ax.grid(False)
-    for i in range(len(names)):
-        for j in range(len(names)):
-            ax.text(j, i, f"{m[i, j]:.2f}", ha="center", va="center", fontsize=4.2,
-                    color="white" if m[i, j] > 0.6 else "#0b0b0b")
-    fig.colorbar(im, ax=ax, fraction=0.04, label="Kendall tau between run rankings by E")
-    fig.tight_layout()
-    save(fig, "fig4_rank_agreement")
-    plt.close(fig)
 
 
 def tables(res):

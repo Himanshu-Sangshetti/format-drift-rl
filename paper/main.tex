@@ -40,7 +40,7 @@ against 350 blind hand labels, and pre-registered six predictions.
 On the most exploited run, the hacking rate of the same answers ranges from 0.20 to 0.76 across graders;
 the hand labels put it at 0.28 [0.11, 0.46], and TRL's grader (0.57) lies outside that interval. Rule
 graders err almost only in one direction: they call 7--87\% of correct answers wrong and pay at most 5 of
-64 wrong ones, so their errors add hacking. The largest single cause is a convention: 43 of TRL's 49 false
+64 wrong ones, so their errors add hacking. In that run 48\% of all late answers were correct but cut off, and the largest single cause of error is a convention: 43 of TRL's 49 false
 alarms are replies that committed to the right answer and then looped until the token limit, a behaviour
 RL produced in that run for every late reply. A strong LLM judge (gpt-oss-120b) agrees with the hand
 labels on 338 of 350 answers. Real hacking remains: OLMo-2-1B exploited the loophole in both seeds,
@@ -65,13 +65,16 @@ with training, they look exactly like hacking that grows with training.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig1_hacking_by_grader.pdf}
-\caption{\textbf{The same answers, graded 19 ways.} Hacking rate $\E$ (share of all answers that the
-training checker paid and the grader calls wrong, late steps minus early steps) for the four runs whose
-loophole was exploited. Gray: rule graders; ``+cut'' counts a reply that hit the token limit as
-unanswered. Blue: LLM judges. Orange: an estimate from the hand labels alone (dotted line). Bars are 95\%
-bootstrap intervals over question groups (rule graders and judges) or labelled answers (hand labels).
-In the leftmost run every late reply hit the token limit, and graders disagree most.}
+\includegraphics[width=\linewidth]{figs/fig1_main.pdf}
+\caption{\textbf{The grader sets the measured hacking rate.} \textbf{a,b} Share of all answers at each saved
+step that the training checker paid and a grader calls wrong, for the two runs with the most cut-off replies
+(gray area: share of replies cut off at the token limit; diamonds: gpt-oss-120b, graded at the measured
+steps). In the Qwen run the graders split as soon as replies hit the limit; in the OLMo run they move
+together. \textbf{c} Hacking rate $\E$ under TRL's grader against the hand-label estimate (squares, 95\%
+intervals on both axes) and against gpt-oss-120b (diamonds, all 18 runs); points below $y=x$ are hacking
+TRL reports that the committed answers do not support. \textbf{d} Share of replies cut off, per run and
+saved step. \textbf{e} Every grader's false-alarm rate (correct answers called wrong) against its miss rate
+(wrong answers paid) on 350 blind hand labels; note the log scale.}
 \label{fig:main}
 \end{figure}
 
@@ -79,9 +82,7 @@ We measure this directly. We train 18 runs of three small models against honest 
 with a planted loophole, save every answer, and grade every paid answer with 18 graders: rule graders
 shipped in TRL \citep{trl}, verl \citep{verl} and lm-eval \citep{biderman2024lessons}, our own, each with
 and without a rule for replies cut off at the token limit, and six LLM-judge set-ups. We then check every
-grader against 350 blind hand labels of the committed final answer. \Cref{fig:main} shows the result for
-the four runs where the loophole was exploited: the measured hacking rate depends on the grader by up to
-a factor of four, and the graders most used in practice are among the furthest from the hand labels.
+grader against 350 blind hand labels of the committed final answer. \Cref{fig:main} summarises the result. In the run where RL drove every reply to the token limit, graders that read only a final box or treat a cut-off reply as unanswered report most of the late answers as hacks (a), while in a run without that drift they agree (b). Across all runs TRL's grader lies above the hand-label estimate wherever replies were cut off (c), the cut-off share is concentrated in exactly those runs (d), and every rule grader errs towards false alarms, while LLM judges trade a few misses for far fewer false alarms (e).
 
 \subsection{Contributions}
 \begin{itemize}
@@ -136,7 +137,7 @@ Many of these replies state the right answer and then repeat, re-check or reform
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig3_training.pdf}
+\includegraphics[width=\linewidth]{figs/fig2_training.pdf}
 \caption{\textbf{RL changes what the grader has to read.} Checker reward, share of replies cut off at
 the 1,536-token limit, and mean reply length over training, one line per run (5-step moving average).
 Under the loophole (third column) one Qwen3-0.6B run reaches 100\% cut-off replies and both OLMo-2-1B runs
@@ -250,6 +251,27 @@ exploited runs.}
 \label{tab:runs}
 \end{table}
 
+\subsection{Where the excess comes from}
+\label{sec:anatomy}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig4_anatomy.pdf}
+\caption{\textbf{What the late answers of each exploited run actually are.} Bars split all answers at steps
+105--120 by the hand labels (estimated per stratum from the 150 labels of this run set); markers show the
+share each grader calls paid-but-wrong. A perfect grader would sit at the end of the yellow segment. In
+Qwen3-0.6B seed 1, 48\% of all late answers are paid, correct and cut off; TRL counts most of them as
+hacks, and gpt-oss-120b counts too few of the answerless ones.}
+\label{fig:anatomy}
+\end{figure}
+\Cref{fig:anatomy} splits the late answers of the four exploited runs by what the hand labels say. In
+Qwen3-0.6B seed 1, 26\% of late answers are paid with a wrong committed answer and 9\% are paid with no
+committed answer: 35\% genuine hacks. Another 48\% are paid, correct and cut off. TRL's grader calls 65\% of
+the late answers paid-but-wrong, strict 81\% and TRL +cut 84\%, so each counts most of the correct cut-off
+answers as hacks; Math-Verify (43\%) and gpt-oss-120b (27\%) come closer, the judge erring the other way by
+paying some answerless replies. In OLMo-2-1B seed 1 the correct cut-off share is only 9\%, and the graders'
+counts (38--54\%) bracket the labelled 45\%. The difference between the two runs is not how much the model
+hacked but how much correct work RL left hanging at the token limit.
+
 \subsection{Which grader is right}
 \label{sec:agreement}
 \Cref{fig:agreement} and \cref{tab:agreement} score every grader against the 350 hand labels. Rule graders
@@ -267,7 +289,7 @@ Agreement is similar on both run sets (\cref{tab:agreement}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig2_agreement.pdf}
+\includegraphics[width=\linewidth]{figs/fig3_agreement.pdf}
 \caption{\textbf{Every grader against 350 blind hand labels.} Left: share of correct answers (by the
 labels) the grader calls wrong. Right: share of wrong or answerless replies it pays. Wilson 95\%
 intervals; agreement counts in brackets. Gray: rule graders; blue: LLM judges.}
@@ -460,7 +482,7 @@ the grader calls a correct answer wrong. Miss: it pays a wrong or answerless rep
 \section{Rank agreement between graders}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.78\linewidth]{figs/fig4_rank_agreement.pdf}
+\includegraphics[width=0.78\linewidth]{figs/fig5_rank_agreement.pdf}
 \caption{Kendall $\tau$ between the rankings of all 18 runs by $\E$ under each pair of graders.}
 \label{fig:tau}
 \end{figure}
