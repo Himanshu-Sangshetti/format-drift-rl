@@ -317,6 +317,13 @@ def main():
 
     trainer = GRPOTrainer(model=a.model, reward_funcs=[reward_arm, reward_strict], args=cfg,
                           train_dataset=train, peft_config=peft, callbacks=[JsonlLog(), KeepAdapters()])
+    # vLLM in colocate mode wraps some model classes (OLMo-2 with vllm 0.32) in its torch.compile wrapper,
+    # and the wrapper leaks into the training copy, whose forward then fails ("no attribute do_not_compile").
+    # The wrapper's own switch sends the training copy to the plain forward; training maths is unchanged.
+    for mod in trainer.model.modules():
+        call = getattr(type(mod), "__call__", None)
+        if call is not None and "vllm" in (getattr(call, "__module__", "") or "") and not hasattr(mod, "do_not_compile"):
+            mod.do_not_compile = True
     trainer.train(resume_from_checkpoint=resume_from)
     trainer.save_model(os.path.join(out_dir, "final"))
     open(os.path.join(out_dir, "DONE"), "w").write("ok\n")

@@ -1,0 +1,2 @@
+# Amendment 10 timing re-test: OLMo-2-1B-DPO after the vLLM-wrapper fix in train_grpo.py. Not reported.
+0.3 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/timing --report none --seed 0 --steps 20 --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond trl_accuracy --tag _tolmo

@@ -102,7 +102,7 @@ def assign(jobs, n):
 def run_dir_of(cmd):
     """The run directory a train_grpo command writes: <cond><tag>_s<seed> under --out."""
     t = cmd.split()
-    get = lambda k, d="": t[t.index(k) + 1] if k in t else d  # noqa: E731
+    get = lambda k, d="": t[len(t) - 1 - t[::-1].index(k) + 1] if k in t else d  # noqa: E731  (last occurrence, as argparse)
     return os.path.basename(get("--out")), f"{get('--cond')}{get('--tag')}_s{get('--seed', '0')}"
 
 
@@ -276,8 +276,17 @@ def collect(m, name, final):
                     os.path.join(dest, f"_machine_{m['id']}") + "/"], capture_output=True, timeout=600)
     if not final:
         return ok
+    # only runs that finished ON THE MACHINE must be complete locally; failed runs are reported, not waited for
+    r = run_ssh(m["id"], "ls -d /workspace/runs/*/DONE /workspace/timing/*/DONE 2>/dev/null")
+    remote_done = {line.strip().split("/")[-2] for line in r.stdout.splitlines() if line.strip().endswith("/DONE")}
     for cmd in m["cmds"]:
         _, run = run_dir_of(cmd)
+        if run not in remote_done:
+            print(f"  {run}: FAILED on the machine (no DONE); logs copied to _machine_{m['id']}")
+            m.setdefault("failed", [])
+            if run not in m["failed"]:
+                m["failed"].append(run)
+            continue
         d = os.path.join(dest, run)
         need = ["DONE", "log.jsonl", "samples.jsonl", "config.json"]
         if not all(os.path.exists(os.path.join(d, f)) for f in need):
