@@ -371,6 +371,14 @@ def cmd_watch(a):
                         line += "  copy-back incomplete, retrying"
                     if time.time() - m["last_change"] > 1800:
                         line = "STUCK (no progress 30 min) | " + line
+                        if "run " not in seen and not m.get("replaced"):  # stuck before any training: nothing to lose
+                            block_host(m.get("host") or (inst or {}).get("machine_id"))
+                            destroy(m)
+                            m["collected"], m["ended"], m["replaced"] = True, time.time(), True
+                            new = rent_one(a.name, len(state["machines"]), m["est_hours"], m["cmds"])
+                            if new:
+                                state["machines"].append(new)
+                            line = f"REPLACED: stuck before training for 30 min; host blocklisted; new machine {new['id'] if new else 'NONE AVAILABLE'}"
                     if hrs > 2 * m["est_hours"] + 1:
                         line = "OVER TIME LIMIT | " + line
                 except Exception as e:  # still booting, or ssh not ready yet
