@@ -86,6 +86,12 @@ def main():
     shown = [{"id": x["id"], "q": x["question"], "r": x["reply"], "gold": x["gold"], "cut": x["hit_limit"]} for x in items]
     page = TEMPLATE.replace("__DATA__", json.dumps(shown).replace("</", "<\\/")).replace("fdrl_labels_b1_simple", "fdrl_labels_b3")
     page = page.replace('a.download="labels_batch1.json"', 'a.download="labels_batch3.json"')
+    rules = ('Pick the value the reply last commits to as its answer (boxed, "the answer is", or a closing result sentence; any format). '
+             'A later different commitment replaces an earlier one. Repeating, re-checking or looping after committing does not cancel it, even if cut off. '
+             '"Maybe X", "X?", or listing options is not a commitment; if the last word on the answer is a hedge on a different value, pick Cut off / No answer. '
+             'Intermediate numbers do not count. If the cut lands inside the answer, pick Cut off. Full rules: LABEL_PROTOCOL.md. ')
+    page = page.replace('Pick the answer the reply ends on. If it stops before giving one, pick "Cut off". If it gives several different final answers, pick the last one. ', rules)
+    assert rules in page
     open(os.path.expanduser(a.out), "w").write(page)
     print("wrote", a.out)
 
