@@ -4,9 +4,9 @@
 
 Himanshu Sangshetti · [Paper (PDF)](paper/main.pdf) · November 2026
 
-![Graders over training, TRL against the hand labels, where replies hit the length limit, and every grader against the hand labels](paper/figs/fig1_main.png)
+![The same answers graded 16 ways against two hand-label ground truths](paper/figs/fig2_headline.png)
 
-*(a, b) Share of answers paid but called wrong by each grader over training; gray: replies cut off at the token limit. (c) TRL's hacking rate against the hand-label estimate and gpt-oss-120b, every run. (d) Where replies hit the limit. (e) Every grader's false alarms against misses on 350 hand labels.*
+*Hacking rate of the four exploited runs under every grader (dots, 95% intervals) against the hand-label estimate under two ground truths: a correct committed answer counts (aqua), or the answer must also be finished (purple).*
 
 When a paper says "the model reward-hacked 57% of the time", that number is a grader's verdict: some
 program decided which of the paid answers were actually wrong. We ask how much of measured reward
@@ -23,10 +23,10 @@ checked all of them against 350 blind hand labels.
    RL drove every late reply to the 1,536-token limit, the hacking rate of the same answers ranges from 0.20
    (gpt-oss-120b) to 0.77 (a format-free grader with a cut-off rule). On runs whose outputs did not drift,
    graders agree within a few points (except verl's `math_dapo`, built for a different answer format).
-2. **The disagreement is a choice of ground truth.** About half of that run's late answers commit to the right
+2. **The disagreement is a choice of ground truth.** Almost half of that run's late answers commit to the right
    answer and then loop until the limit. By the hand labels, paid replies with a wrong or no committed answer
    rose by 0.27 [0.08, 0.45]; unfinished correct replies add a further 0.47 [0.30, 0.64]. Graders with a box or
-   cut-off rule count both, Math-Verify and LLM judges roughly the first, and TRL's default grader (0.57) neither.
+   cut-off rule count both, Math-Verify and the strongest LLM judges roughly the first, and TRL's default grader (0.57) neither.
 3. **The loop is also where wrong answers get paid.** By the hand labels, 47% of paid replies cut off at the
    limit were hacks against 8% of paid replies that finished (Qwen3-0.6B, seed 0). With cut-off replies paid 0,
    almost no hacking remained under any grader.

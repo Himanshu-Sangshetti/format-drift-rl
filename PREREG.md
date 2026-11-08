@@ -405,7 +405,8 @@ $12.10 on Vast.ai RTX 4090s; the judges $1.85 on one A100 80 GB.
   the labelling page. The 50-item self-consistency re-label has not been done yet.
 - A hand-label estimate of E per run was added: every paid answer counts as wrong with the labelled
   wrong-share of its stratum (the run's own labels when it has at least 5 in that stratum, otherwise
-  all runs pooled), bootstrapped over labelled answers.
+  all runs pooled), with each stratum's outcome mix drawn from a Dirichlet posterior (Jeffreys prior);
+  a second, finished-answer truth (cut-off replies count as failures) was added, both exploratory.
 
 **Predictions.**
 - P1 failed: verl `math_reward` +cut exceeded TRL +cut by 0.05 in 0 of the 4 format-free honest runs.

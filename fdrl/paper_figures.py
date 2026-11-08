@@ -293,7 +293,7 @@ def fig_anatomy(res):
     fig.legend(handles=[matplotlib.patches.Patch(color=c, label=f"paid, label: {k}" if k != "not paid" else k)
                         for k, c in segs], loc="upper center", ncol=5, bbox_to_anchor=(0.55, 1.12), fontsize=5.8,
                handlelength=1.2, columnspacing=1.2)
-    ax.legend(handles=[Line2D([], [], marker=mk, ls="", color=INK, ms=4, label=f"called wrong by {g}") for g, mk in marks],
+    ax.legend(handles=[Line2D([], [], marker=mk, ls="", color=INK, ms=4, label=f"paid and called wrong by {g}") for g, mk in marks],
               loc="upper center", ncol=5, bbox_to_anchor=(0.5, 1.1), fontsize=5.8, handletextpad=0.2, columnspacing=1.2)
     save(fig, "fig4_anatomy")
 
@@ -372,7 +372,7 @@ def fig_headline(res):
 def fig_dynamics(res):
     top = sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"])[:2]
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.4), sharey=True, gridspec_kw={"wspace": 0.42})
-    titles = ["Qwen3-0.6B, seed 1: graders split as replies hit the limit", "OLMo-2-1B, seed 1: graders move together"]
+    titles = ["Qwen3-0.6B, seed 1: graders split as replies hit the limit", "OLMo-2-1B, seed 1: rule graders move together"]
     for ax, run, ti in zip(axes, top, titles):
         over_training(ax, res, run, ti)
     axes[0].set_ylabel("paid but called wrong")
@@ -383,7 +383,7 @@ def fig_dynamics(res):
 def fig_loop(res):
     """Among late paid answers of each exploited run: share that are hacks (wrong or no committed answer
     by the hand labels), for replies cut off at the limit vs replies that finished."""
-    runs = sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"])
+    runs = sorted(res["hacked"], key=lambda r: res["runs"][r]["cut_late"])  # the all-cut run, with no finished replies, last
     fig, ax = plt.subplots(figsize=(3.5, 2.4))
     for i, run in enumerate(runs):
         est = res["label_model"][run]["estimates"]

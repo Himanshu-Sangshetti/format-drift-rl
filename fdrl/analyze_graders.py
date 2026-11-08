@@ -537,13 +537,14 @@ def tables(res):
     open(os.path.join(out, "agreement.tex"), "w").write("\n".join(lines) + "\n")
     # main-text accuracy table: raw counts on all 350 labels and design-weighted rates on the second run set
     wr = res["extras"]["weighted_agreement_second_set"]["rates"]
+    def pc(v, ci):  # percent with interval; a zero count has no sampling interval to show
+        return f"{100 * v:.1f}" if ci[0] == ci[1] else f"{100 * v:.1f} [{100 * ci[0]:.1f}, {100 * ci[1]:.1f}]"
     keep = ["strict", "verl math", "verl dapo", "TRL", "TRL +cut", "gold_label", "Math-Verify", "CompassVerifier-3B",
             "Qwen3-8B", "gpt-oss-20b", "gpt-oss-120b"]
     lines = []
     for g in keep:
         lines.append(f"{g.replace('_', chr(92) + '_')} & {a[g]['false_alarm_k']}/{a[g]['n_right']} & {a[g]['miss_k']}/{a[g]['n_wrong']}"
-                     f" & {100 * wr[g]['false_alarm']:.1f} [{100 * wr[g]['false_alarm_ci'][0]:.1f}, {100 * wr[g]['false_alarm_ci'][1]:.1f}]"
-                     f" & {100 * wr[g]['miss']:.1f} [{100 * wr[g]['miss_ci'][0]:.1f}, {100 * wr[g]['miss_ci'][1]:.1f}]" + r" \\")
+                     f" & {pc(wr[g]['false_alarm'], wr[g]['false_alarm_ci'])} & {pc(wr[g]['miss'], wr[g]['miss_ci'])}" + r" \\")
     open(os.path.join(out, "accuracy.tex"), "w").write("\n".join(lines) + "\n")
     # where each hand-label estimate comes from
     names = {"control_right": "late, all rule graders right", "control_wrong": "late, all rule graders wrong",
