@@ -292,6 +292,7 @@ def main():
                             "no_answer": sum(not r["answered"] for r in rows)}}
     json.dump(res, open(os.path.join(ROOT, "results", "analysis.json"), "w"), indent=1)
     figures(res, training_curves(), hacked)
+    tables(res)
     print(json.dumps({k: res[k] for k in ("label_counts", "trace_categories", "predictions")}, indent=1))
 
 
@@ -406,6 +407,32 @@ def figures(res, curves, hacked):
     fig.tight_layout()
     save(fig, "fig4_rank_agreement")
     plt.close(fig)
+
+
+def tables(res):
+    """LaTeX tables for the paper, written to paper/tables/."""
+    out = os.path.join(ROOT, "paper", "tables")
+    os.makedirs(out, exist_ok=True)
+    f = lambda x: ("$-$" if x < -0.005 else "") + f"{abs(x):.2f}" if x is not None else "--"  # noqa: E731
+    cols = ["strict", "verl math", "verl dapo", "TRL", "TRL +cut", "Math-Verify", "Qwen3-8B", "gpt-oss-120b"]
+    order = ["trl_accuracy", "gold_label_nocut", "substring_all_nocut", "substring_all"]
+    runs = sorted(res["runs"], key=lambda r: (order.index(res["runs"][r]["cond"]), res["runs"][r]["model"], res["runs"][r]["seed"]))
+    lines = []
+    for r in runs:
+        v = res["runs"][r]
+        hl = v["CI"]["hand labels"] if v["CI"] else None
+        lines.append(f"{COND[v['cond']]} & {MODEL[v['model']]} & {v['seed']} & {v['cut_late']:.2f} & "
+                     + " & ".join(f(v["E"][c]) for c in cols)
+                     + (f" & {f(hl[0])} [{f(hl[1])}, {f(hl[2])}]" if hl else " & --") + r" \\")
+    open(os.path.join(out, "runs.tex"), "w").write("\n".join(lines) + "\n")
+    a, by = res["agreement"], res["agreement_by_run_set"]
+    order_g = sorted(a, key=lambda g: -a[g]["agree"][0])
+    lines = []
+    for g in order_g:
+        s1, s2 = by["first run set"][g], by["second run set"][g]
+        lines.append(f"{g.replace('_', chr(92) + '_')} & {a[g]['agree_k']}/{a[g]['n']} & {a[g]['false_alarm_k']}/{a[g]['n_right']} & "
+                     f"{a[g]['miss_k']}/{a[g]['n_wrong']} & {s1['agree_k']}/{s1['n']} & {s2['agree_k']}/{s2['n']}" + r" \\")
+    open(os.path.join(out, "agreement.tex"), "w").write("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":
