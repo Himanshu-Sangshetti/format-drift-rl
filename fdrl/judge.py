@@ -84,6 +84,15 @@ def build(a):
     print(len(rows), "inputs ->", a.out)
 
 
+def cv_prompts():
+    """CompassVerifier's prompt strings, read from its source as literals (the file is never executed)."""
+    import ast
+
+    tree = ast.parse(urllib.request.urlopen(CV_URL, timeout=60).read().decode())
+    return {t.id: ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign)
+            for t in n.targets if isinstance(t, ast.Name) and isinstance(n.value, ast.Constant)}
+
+
 def norm(x):
     s = re.sub(r"\\boxed\{([^{}]*)\}", r"\1", str(x))
     s = re.sub(r"[^0-9.\-]", "", s)
@@ -117,8 +126,7 @@ def run(a):
         rows = rows[: a.limit]
     os.makedirs(a.out, exist_ok=True)
     if a.judge == "compassverifier-3b":
-        ns = {}
-        exec(urllib.request.urlopen(CV_URL, timeout=60).read().decode(), ns)
+        ns = cv_prompts()
         msgs = [[{"role": "user", "content": ns["CV_PROMPT"].format(
             question=r["question"], gold_answer=r["gold"], llm_response=r["reply"])}] for r in rows]
         kw, max_len, max_out = {}, 4096, 16
