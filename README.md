@@ -1,4 +1,4 @@
-# How Much Reward Hacking Is the Grader?
+# When Format Drift Masquerades as Reward Hacking
 
 **Grader choice and measured hacking in RLVR: a pre-registered study with 350 hand labels**
 
@@ -8,18 +8,23 @@ Himanshu Sangshetti · [Paper (PDF)](paper/main.pdf) · November 2026
 
 *Hacking rate of the four exploited runs under every grader (dots, 95% intervals) against the hand-label estimate under two ground truths: a correct committed answer counts (aqua), or the answer must also be finished (purple).*
 
-When a paper says "the model reward-hacked 57% of the time", that number is a grader's verdict: some
-program decided which of the paid answers were actually wrong. We ask how much of measured reward
-hacking is the grader failing as RL changes the model's outputs, rather than the model gaming the task.
+Reward hacking in RLVR is measured by a grader that decides which paid answers were actually wrong. RL also
+changes how a model writes its answers. **We ask whether this format drift masquerades as reward hacking, and how
+much the choice of grader decides it.**
 
-We trained Qwen3-0.6B, Qwen3-1.7B and OLMo-2-1B with Dr. GRPO in 18 runs, against honest checkers and a
-checker with a loophole (it pays any reply that contains the right number anywhere). We then graded every
-paid answer with 6 rule graders (each with and without a cut-off rule) and 6 LLM-judge set-ups, and
-checked all of them against 350 blind hand labels.
+We trained Qwen3-0.6B, Qwen3-1.7B and OLMo-2-1B with Dr. GRPO in 18 runs, against honest checkers and a checker
+with a loophole (it pays any reply that contains the right number anywhere), graded every paid answer with 6 rule
+graders (each with and without a cut-off rule) and 6 LLM-judge set-ups, and checked them against 350 hand labels
+of the committed answer, made without seeing the reference.
+
+**Answer, in short:** yes, where the drift changes how answers end. In the run whose replies looped to the token
+limit, TRL's grader reports 0.57 while the hand labels put paid wrong-or-unanswered replies at 0.27: up to half of
+the reported hacking is correct answers left unfinished. Milder drift (more boxes per reply) fooled only a box-only
+grader, on one run. Without drift, graders agreed, and OLMo's hacking was real.
 
 ## Findings
 
-1. **The grader sets the number where outputs drift.** On the most exploited run (Qwen3-0.6B, seed 1), where
+1. **Format drift sets the number.** On the most exploited run (Qwen3-0.6B, seed 1), where
    RL drove every late reply to the 1,536-token limit, the hacking rate of the same answers ranges from 0.20
    (gpt-oss-120b) to 0.77 (a format-free grader with a cut-off rule). On runs whose outputs did not drift,
    graders agree within a few points (except verl's `math_dapo`, built for a different answer format).
@@ -102,7 +107,7 @@ not tested here.
 
 ```bibtex
 @misc{sangshetti2026grader,
-  title  = {How Much Reward Hacking Is the Grader? Grader Choice and Measured Hacking in RLVR},
+  title  = {When Format Drift Masquerades as Reward Hacking: Grader Choice and Measured Hacking in RLVR},
   author = {Sangshetti, Himanshu},
   year   = {2026},
   url    = {https://github.com/Himanshu-Sangshetti/format-drift-rl}

@@ -260,6 +260,9 @@ def per_step(judges):
             c = acc[t]
             c["n"] += 1
             c["cut"] += cut
+            # format markers: several boxes; a box wrapped in another box or in bold
+            c["multi box"] += s["reply"].count("\\boxed") >= 2
+            c["nested box"] += bool(re.search(r"\\boxed\{\s*\\(?:boxed|textbf|mathbf)", s["reply"]))
             if not paid:
                 continue
             for k in ("strict", "verl math", "TRL", "Math-Verify"):
@@ -272,7 +275,9 @@ def per_step(judges):
                 if key in judges[name]:
                     c[name] += not judges[name][key]
         steps = sorted(acc)
-        series = {"step": steps, "cut": [acc[t]["cut"] / acc[t]["n"] for t in steps]}
+        series = {"step": steps, "cut": [acc[t]["cut"] / acc[t]["n"] for t in steps],
+                  "multi box": [acc[t]["multi box"] / acc[t]["n"] for t in steps],
+                  "nested box": [acc[t]["nested box"] / acc[t]["n"] for t in steps]}
         for k in ("strict", "verl math", "TRL", "TRL +cut", "Math-Verify"):
             series[k] = [acc[t][k] / acc[t]["n"] for t in steps]
         for name in ("gpt-oss-120b", "Qwen3-8B"):

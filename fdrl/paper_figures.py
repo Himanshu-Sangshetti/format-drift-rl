@@ -370,13 +370,32 @@ def fig_headline(res):
 
 
 def fig_dynamics(res):
-    top = sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"])[:2]
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.4), sharey=True, gridspec_kw={"wspace": 0.42})
-    titles = ["Qwen3-0.6B, seed 1: graders split as replies hit the limit", "OLMo-2-1B, seed 1: rule graders move together"]
-    for ax, run, ti in zip(axes, top, titles):
-        over_training(ax, res, run, ti)
-    axes[0].set_ylabel("paid but called wrong")
-    axes[0].text(4, 0.9, "gray area: replies cut off", fontsize=5.6, color=INK2)
+    """Format drift (top) and what each grader makes of it (bottom), for three runs."""
+    cols = [("trl_accuracy_q06_s0", "Honest checker, Qwen3-0.6B s0:\nmore boxes, only strict misreads"),
+            ("substring_all_q06_s1", "Loophole, Qwen3-0.6B s1:\nnested boxes, loops to the limit"),
+            ("substring_all_olmo1b_s1", "Loophole, OLMo-2-1B s1:\nlong replies late, little box drift")]
+    fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.2), sharex=True, gridspec_kw={"hspace": 0.18, "wspace": 0.5,
+                                                                                  "height_ratios": [0.8, 1]})
+    marks = [("multi box", "replies with 2+ boxes", PURPLE), ("nested box", "boxes nested or bolded", MAGENTA),
+             ("cut", "replies cut off at the limit", INK2)]
+    for j, (run, title) in enumerate(cols):
+        s = res["per_step"][run]
+        ax = axes[0, j]
+        for k, lab, col in marks:
+            ax.plot(s["step"], s[k], color=col, lw=1.3, label=lab)
+        ax.set_ylim(0, 1.02)
+        pct(ax)
+        ax.grid(axis="y", color=GRID, lw=.5)
+        ax.set_title(title, fontsize=6.6, fontweight="bold")
+        over_training(axes[1, j], res, run, "", label_ends=(j > 0))
+        axes[1, j].set_title("")
+    axes[0, 0].set_ylabel("format of replies")
+    axes[1, 0].set_ylabel("paid but called wrong")
+    hs, ls = axes[0, 0].get_legend_handles_labels()
+    gh = [Line2D([], [], color=c, lw=1.3, ls=st, label=g) for g, c, st in LINES] + \
+         [Line2D([], [], marker="D", ls="", color=INK, ms=3, label=JUDGE)]
+    fig.legend(hs + gh, ls + [h.get_label() for h in gh], loc="upper center", ncol=5, bbox_to_anchor=(0.5, 1.07),
+               fontsize=5.6, handlelength=1.6, columnspacing=1.0)
     save(fig, "fig3_dynamics")
 
 
