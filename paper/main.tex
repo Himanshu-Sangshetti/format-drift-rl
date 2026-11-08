@@ -43,20 +43,21 @@
 \maketitle
 
 \begin{abstract}
-Reward hacking in reinforcement learning with verifiable rewards (RLVR) is measured by a grader that decides
-which paid answers were actually wrong. RL also changes how a model writes its answers. We ask whether this
-format drift masquerades as reward hacking, and how much the choice of grader decides it. We trained three small
-models in 18 runs against honest checkers and a checker with a planted loophole, graded every paid answer with 18
-graders (rule graders from TRL, verl, lm-eval and our own, each with and without a rule for replies cut off at
-the token limit, and six LLM-judge set-ups), and compared them with 350 hand labels of the committed answer, made
-without seeing the reference; the measure and six predictions were pre-registered. Drift took two forms. In six of the fourteen Qwen runs, replies came to carry several boxes; this was mostly harmless, but a box-only grader read it as hacking of 0.12 on one honest run. In one run, RL also nested the boxes and drove every late reply into a loop that ran to the
-1,536-token limit; there graders reported 0.20 to 0.77 on the same answers. By the hand labels, paid replies with
-a wrong or no committed answer rose by 0.27 [0.08, 0.45], and replies that commit to the correct answer but never
-finish add 0.47 [0.30, 0.64]. Graders that read the whole reply measure the first; graders with a final-box or
-cut-off rule count both; TRL's default reports 0.57, matching neither. Format drift therefore did masquerade as
-hacking, by up to half of the rate TRL reports, but only where it changed how answers end; elsewhere graders
-agreed, and some measured hacking was real. Two of six pre-registered predictions held, three failed and one
-split. We release every answer, verdict and label.
+When a model trained with reinforcement learning is said to reward hack, the evidence comes from a second
+program, a grader, that checks which rewarded answers were actually wrong. But RL also changes how a model
+writes its answers: it adds boxes, nests them, or keeps repeating itself until it runs out of tokens. If the
+grader misreads the new format, correct answers look like hacks.
+
+We measure how much this happens. We train small models against a deliberately exploitable reward, grade every
+rewarded answer with the graders people use in practice (from TRL, verl and lm-eval, plus LLM judges), and compare
+them with answers we labelled by hand. Format drift mattered only when it changed how answers end. In the run
+where the model learned to state the answer and then loop until it was cut off, graders reported hacking rates
+from 0.20 to 0.77 on the same answers, and TRL's default grader reported 0.57 where the hand labels support 0.27.
+The disagreement comes down to one choice graders make silently: whether a correct answer that was never finished
+counts as correct.
+
+Where outputs did not drift, graders agreed, and in one model the hacking was real. Reported hacking rates should
+say how they treat unfinished answers. We release every answer, grader verdict and label.
 \end{abstract}
 
 \section{Introduction}
@@ -71,8 +72,7 @@ or gain markup \citep{sanyal2026format,lyu2026samebox,chang2026reporting}. Call 
 grader built for the starting format can misread the drifted one and report a correct answer as a hack, and
 because drift grows with training, the error looks exactly like hacking that grows with training. This raises
 the question we study: \textbf{does format drift masquerade as reward hacking, and how much does the choice of
-grader decide it?} Put operationally: on the same saved answers, how much do measured hacking rates move across
-the graders people use, and which grader readings does a person's reading of the committed answer support?
+grader decide it?} 
 
 \begin{figure}[t]
 \centering
@@ -113,35 +113,28 @@ finished count? In this run, 47\% of all late answers are paid, commit to the co
 \label{fig:schematic}
 \end{figure}
 
-To answer it, we train 18 runs of three small models against honest checkers and against a checker with a
-planted loophole, save every answer, and grade every paid answer with 18 graders: the rule graders shipped
-in TRL \citep{trl}, verl \citep{verl} and lm-eval \citep{biderman2024lessons}, two of our own, each with and
-without a rule for replies cut off at the token limit, and six LLM-judge set-ups. We check every grader
-against 350 hand labels of the committed final answer, made without seeing the reference, and we pre-register the run set, the measure
-and six predictions. We find:
+To answer it, we train three small models in 18 runs, some against an honest reward and some against a reward
+with a deliberate loophole, and keep every answer. We then grade the rewarded answers with the graders people use
+in practice, from TRL \citep{trl}, verl \citep{verl} and lm-eval \citep{biderman2024lessons}, and with LLM judges.
+To know which grader is right, we label 350 answers by hand. The design and six predictions were registered before
+any run. We find:
 
-\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
-\item \textbf{RL drifted the format differently in different runs} (\cref{fig:dynamics}). In six of the fourteen Qwen runs, honest ones included, replies came to carry several boxes; one loophole run also nested its boxes and drove every late
-reply into a loop that ran to the token limit; OLMo's replies grew long late in training with little box drift.
-\item \textbf{Mild drift was misread only by a box-only grader.} Where replies merely carried more boxes, every grader agreed except our strict grader, which requires a single distinct boxed value: on one honest run, whose replies came to box several different values, it reported hacking of 0.12 that no other grader saw (\cref{sec:main}).
-\item \textbf{Drift that changes how answers end splits graders by ground truth.} In the run whose replies looped
-to the limit (Qwen3-0.6B, seed 1; one of four exploited runs), graders reported 0.20 to 0.77 on the same answers.
-Almost half of its late answers commit to the right answer and then loop (\cref{fig:schematic}). Graders that read
-the whole reply count these as correct and match the hand-labelled rise in paid wrong-or-unanswered replies,
-0.27; graders with a final-box or cut-off rule count them as failures and match 0.74; TRL's default (0.57)
-matches neither (\cref{sec:truths}).
-\item \textbf{Not all of it is masquerade.} OLMo's hacking was real and every grader saw it, and the looping
-replies were also where the loophole paid wrong answers (\cref{sec:loop}).
-\item \textbf{Rule graders err towards hacking; judges lean the other way} (\cref{sec:accuracy}).
+\begin{itemize}[leftmargin=1.2em,itemsep=3pt]
+\item \textbf{Drift that changes how answers end makes hacking look larger.} In the run where replies looped
+until they were cut off, graders reported 0.20 to 0.77 on the same answers. The hand labels show why: almost
+half of the late answers are correct but unfinished, and graders disagree on whether that counts
+(\cref{fig:schematic}, \cref{sec:main,sec:truths}).
+\item \textbf{Milder drift is mostly harmless.} Replies with several boxes became common in some runs; only a
+grader that insists on a single box misread them (\cref{sec:main}).
+\item \textbf{Not all of it is masquerade.} Where outputs did not drift, every grader saw the same hacking, and
+in OLMo it was real (\cref{sec:loop}).
 \end{itemize}
 
 \begin{finding}{Our answer, in short}
-\textbf{Does format drift masquerade as reward hacking?} Yes, where the drift changes how answers end. On the
-clearest run TRL's grader reports 0.57, while the hand labels put paid wrong-or-unanswered replies at 0.27
-[0.08, 0.45]: up to half of the reported hacking is correct answers left unfinished by a loop. Milder drift, more boxes per reply, was mostly harmless and fooled only a box-only grader, on one run. Where outputs did not drift, graders agreed, and OLMo's hacking
-was real. \textbf{How much does the grader decide?} The ranking of runs barely changes (Kendall $\tau_b = 0.98$
-between TRL and the strongest judge over the eight loophole runs), but the size of the hacking can change by a
-factor of four, and it is set by whether the grader counts a correct answer that was never finished.
+Format drift masquerades as reward hacking when it changes how answers end. In our clearest case, TRL's grader
+reports a hacking rate of 0.57; by our hand labels, 0.27 is real and the rest is correct answers that looped until
+they were cut off. Whether those count is a convention each grader applies silently, and it changes the measured
+rate by up to a factor of four. Without such drift, graders agree.
 \end{finding}
 
 \noindent A reported hacking rate is therefore a property of the run \emph{and} of the grader's conventions.
