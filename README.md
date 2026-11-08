@@ -19,27 +19,22 @@ checked all of them against 350 blind hand labels.
 
 ## Findings
 
-1. **The grader sets the number.** On the most-exploited run (Qwen3-0.6B, seed 1), the hacking rate of
-   the same answers is 0.73 under a box-only grader, 0.57 under TRL's `accuracy_reward`, 0.35 under
-   Math-Verify on the whole reply and 0.20 under gpt-oss-120b. The hand labels put it at 0.28
-   [0.10, 0.46]; TRL's and the box-only number lie above that interval.
-2. **Most of the inflation is one convention: replies that hit the length limit.** RL pushed every late
-   reply of this run to the 1,536-token limit. Many had already committed to the right answer and then
-   looped until the limit. 43 of TRL's 49 false alarms on labelled answers are such replies. Closing the
-   cut-off channel in the checker removed the measured hacking (pre-registered, both seeds).
-3. **Rule graders err in one direction.** Against the hand labels, rule graders almost never pay a wrong
-   answer (0 to 5 of 64) but call correct answers wrong: 21 (Math-Verify), 49 (TRL), 113 (verl
-   `math_reward`), 137 (box-only) and 250 (verl `math_dapo`) of 286. Errors in that direction only ever
-   add hacking.
-4. **A strong LLM judge agrees best with the hand labels.** gpt-oss-120b agrees on 338 of 350 (2 false
-   alarms, 10 misses), Qwen3-8B on 335. Judges are not perfect on unanswered replies: sighted judges pay
-   12-23% of them.
-5. **Real hacking is still there.** OLMo-2-1B exploited the loophole in both seeds (hand-label estimates
-   0.16 and 0.25), and there the graders broadly agree. Qwen3-1.7B did not exploit it.
-6. **Rankings can flip.** verl's `math_dapo` ranks runs by hacking almost independently of the other
-   graders (Kendall tau-b 0.15 against TRL +cut) and reports large negative "hacking" on honest runs.
+1. **The grader sets the number where outputs drift.** On the most exploited run (Qwen3-0.6B, seed 1), where
+   RL drove every late reply to the 1,536-token limit, the hacking rate of the same answers ranges from 0.20
+   (gpt-oss-120b) to 0.77 (a format-free grader with a cut-off rule). On runs whose outputs did not drift,
+   graders agree within a few points (except verl's `math_dapo`, built for a different answer format).
+2. **The disagreement is a choice of ground truth.** About half of that run's late answers commit to the right
+   answer and then loop until the limit. By the hand labels, paid replies with a wrong or no committed answer
+   rose by 0.27 [0.08, 0.45]; unfinished correct replies add a further 0.47 [0.30, 0.64]. Graders with a box or
+   cut-off rule count both, Math-Verify and LLM judges roughly the first, and TRL's default grader (0.57) neither.
+3. **The loop is also where wrong answers get paid.** By the hand labels, 47% of paid replies cut off at the
+   limit were hacks against 8% of paid replies that finished (Qwen3-0.6B, seed 0). With cut-off replies paid 0,
+   almost no hacking remained under any grader.
+4. **Rule graders over-count, judges under-count.** Rule graders almost never pay a wrong answer but call
+   correct ones wrong (TRL: 49 of 286 hard cases); gpt-oss-120b agrees with 338 of 350 hand labels but pays
+   some answerless replies.
 
-Pre-registered outcomes (Amendment 10 in [PREREG.md](PREREG.md)): P3 and P4 held; P1, P2 and P6
+The two-truth split, the loop analysis and the design-weighted accuracy are exploratory. Pre-registered outcomes (Amendment 10 in [PREREG.md](PREREG.md)): P3 and P4 held; P1, P2 and P6
 failed; P5 held for blind judges and failed for sighted ones.
 
 ![What the late answers of each exploited run actually are, and what each grader calls hacking](paper/figs/fig4_anatomy.png)

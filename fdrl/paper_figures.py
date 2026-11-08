@@ -262,7 +262,11 @@ def fig_anatomy(res):
     marks = [("strict", "s"), ("TRL +cut", "^"), ("TRL", "v"), ("Math-Verify", "o"), (JUDGE, "D")]
     fig, ax = plt.subplots(figsize=(7.2, 2.5))
     for y, run in enumerate(hacked):
-        an = res["anatomy"][run]
+        an = dict(res["anatomy"][run])
+        est = res["label_model"][run]["estimates"]
+        comp = {k: est["late: " + k][0] for k in ("wrong answer", "no answer", "right, cut off", "right", "not paid")}
+        tot = sum(comp.values())
+        an.update({k: v / tot for k, v in comp.items()})  # posterior medians, rescaled to sum to 1
         x0 = 0
         for k, col in segs:
             w = an.get(k, 0)
@@ -271,10 +275,13 @@ def fig_anatomy(res):
                 ax.text(x0 + w / 2, y, f"{w:.0%}", ha="center", va="center", fontsize=5.6,
                         color="white" if col in (BLUE, ORANGE) else INK)
             x0 += w
-        for g, mk in marks:
+        for k, (g, mk) in enumerate(marks):
             x = an["called wrong: " + g]
             ax.plot([x, x], [y - 0.25, y + 0.25], color=INK, lw=.6, zorder=4)
-            ax.plot(x, y - 0.38, mk, ms=4.2, color=INK, mec="white", mew=.5, zorder=5)
+            ax.plot(x, y - 0.33 - 0.075 * k, mk, ms=3.6, color=INK, mec="white", mew=.4, zorder=5)
+        lm = res["label_model"][run]["estimates"]["right but cut off, share of late answers"]
+        ax.text(1.005, y, f"right but cut off:\n{lm[0]:.0%} [{lm[1]:.0%}, {lm[2]:.0%}]", transform=ax.get_yaxis_transform(),
+                fontsize=5.0, va="center", color=INK2)
     ax.set_yticks(range(len(hacked)))
     ax.set_yticklabels([f"{MODEL[meta(r)[1]]}, seed {meta(r)[2]}" for r in hacked])
     ax.set_ylim(len(hacked) - 0.55, -0.75)
@@ -374,38 +381,29 @@ def fig_dynamics(res):
 
 
 def fig_loop(res):
-    """Under the loophole: P(paid | committed answer wrong), for replies cut off vs finished, late steps."""
-    from math import sqrt
-
-    def wil(k, n, z=1.96):
-        if not n:
-            return None
-        p = k / n
-        d = 1 + z * z / n
-        c = (p + z * z / (2 * n)) / d
-        h = z * sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
-        return p, c - h, c + h
-    data = res["extras"]["paid_given_wrong_by_cutoff"]
-    runs = [r for r in ("substring_all_q06_s1", "substring_all_q06_s0", "substring_all_olmo1b_s1", "substring_all_olmo1b_s0",
-                        "substring_all_q17_s0", "substring_all_q17_s1") if r in data]
+    """Among late paid answers of each exploited run: share that are hacks (wrong or no committed answer
+    by the hand labels), for replies cut off at the limit vs replies that finished."""
+    runs = sorted(res["hacked"], key=lambda r: -res["runs"][r]["cut_late"])
     fig, ax = plt.subplots(figsize=(3.5, 2.4))
     for i, run in enumerate(runs):
-        for dx, key, col, lab in ((-0.16, "done", AQUA, "finished"), (0.16, "cut", ORANGE, "cut off at the limit")):
-            k, n = data[run][key]
-            w = wil(k, n)
-            if not w:
+        est = res["label_model"][run]["estimates"]
+        n = est["late_paid"]
+        for dx, key, col, nn in ((-0.16, "hack share, finished", AQUA, n["finished"]), (0.16, "hack share, cut off", ORANGE, n["cut"])):
+            v = est.get(key)
+            if not v:
                 continue
-            ax.bar(i + dx, w[0], width=0.3, color=col)
-            ax.plot([i + dx, i + dx], [w[1], w[2]], color=INK, lw=.7)
-            ax.text(i + dx, -0.06, f"{n}", ha="center", fontsize=4.8, color=INK2)
+            ax.bar(i + dx, v[0], width=0.3, color=col)
+            ax.plot([i + dx, i + dx], [v[1], v[2]], color=INK, lw=.7)
+            ax.text(i + dx, -0.06, f"{nn}", ha="center", fontsize=4.8, color=INK2)
     ax.set_xticks(range(len(runs)))
     ax.set_xticklabels([f"{SHORT[meta(r)[1]]}\nseed {meta(r)[2]}" for r in runs], fontsize=5.6)
     ax.set_ylim(-0.1, 1.0)
     pct(ax)
-    ax.set_ylabel("wrong replies paid by the loophole")
+    ax.set_ylabel("paid answers that are hacks")
     ax.grid(axis="y", color=GRID, lw=.5)
-    ax.legend(handles=[matplotlib.patches.Patch(color=AQUA, label="finished"),
-                       matplotlib.patches.Patch(color=ORANGE, label="cut off at the limit")], loc="upper right", fontsize=5.6)
+    ax.legend(handles=[matplotlib.patches.Patch(color=AQUA, label="reply finished"),
+                       matplotlib.patches.Patch(color=ORANGE, label="reply cut off at the limit")],
+              loc="upper right", fontsize=5.6)
     ax.text(-0.5, -0.095, "n:", fontsize=4.8, color=INK2)
     save(fig, "fig5_loop")
 

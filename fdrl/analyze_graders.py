@@ -155,44 +155,95 @@ def stratum(run, step, cut, v):
     return "loop_uncut" if not all(vals) else None
 
 
-def human_estimate(table, labels, run, rng, truth="committed", own_only=False):
-    """Hacking rate from the hand labels alone: each paid answer is counted wrong with the labelled
-    wrong-share of its stratum (batch 3, sampled per stratum from these runs); answers every rule
-    grader agrees on at the early steps keep that verdict. Strata use this run's own labels when it has
-    at least 5 labelled answers there, otherwise all runs pooled. Bootstrap over labelled answers."""
+def label_model(table, labels, run, rng, own_only=False):
+    """Hand-label estimates for one run, all from the same posterior draws.
+
+    Every paid answer at the measured steps falls in a sampling stratum of the 150 labels of this run set
+    (stratum()). Each stratum's mix of labelled outcomes (committed right / committed wrong / no committed
+    answer) is drawn from a Dirichlet with a Jeffreys prior (counts + 1/2); a stratum uses this run's own
+    labels when it has at least 5 there, otherwise all runs pooled. Early answers on which every rule grader
+    agrees share the draw of the late agreeing strata (the same labels). Under the finished truth a reply cut
+    off at the token limit is wrong by definition. Point = posterior median; interval = 2.5-97.5%."""
     pooled, own = collections.defaultdict(list), collections.defaultdict(list)
     for x in labels.values():
         if x["batch"] == 3:
-            wrong = (not x["human"]) or (truth == "delivered" and bool(x["hit_limit"]))
-            pooled[x["group"]].append(wrong)
+            cat = "right" if x["human"] else ("wrong" if x["answered"] else "none")
+            pooled[x["group"]].append((cat, bool(x["hit_limit"])))
             if x["run"] == run:
-                own[x["group"]].append(wrong)
-    # this run's own labelled answers where it has at least 5 in a stratum, otherwise all runs pooled
+                own[x["group"]].append((cat, bool(x["hit_limit"])))
     lab = {s: (own[s] if (len(own[s]) >= 5 or (own_only and own[s])) else v) for s, v in pooled.items()}
-    # early answers every rule grader agrees on were not labelled at the early steps: they take the
-    # wrong-share of the late agreeing strata (labelled), with the same uncertainty
-    lab["agree_right"], lab["agree_wrong"] = lab["control_right"], lab["control_wrong"]
+    alias = {"agree_right": "control_right", "agree_wrong": "control_wrong"}
     counts = collections.Counter()
+    late_cut = collections.Counter()
     for r in table[run]:
         if r["paid"]:
-            counts[("early" if r["step"] in EARLY else "late", stratum(run, r["step"], r["cut"], r["v"]))] += 1
+            s = stratum(run, r["step"], r["cut"], r["v"])
+            w = "early" if r["step"] in EARLY else "late"
+            counts[(w, s)] += 1
+            if w == "late":
+                late_cut[(s, r["cut"])] += 1
+    n_late, n_early = PER_STEP * len(LATE), PER_STEP * len(EARLY)
 
-    def est(rates):
-        late = sum(n * rates[s] for (w, s), n in counts.items() if w == "late")
-        early = sum(n * rates[s] for (w, s), n in counts.items() if w == "early")
-        return late / (PER_STEP * len(LATE)) - early / (PER_STEP * len(EARLY))
+    def draw(items, median=False):
+        k = collections.Counter(c for c, _ in items)
+        a = [k[c] + 0.5 for c in ("right", "wrong", "none")]
+        if median:
+            tot = sum(a)
+            return {c: v / tot for c, v in zip(("right", "wrong", "none"), a)}
+        g = [rng.gammavariate(x, 1) for x in a]
+        tot = sum(g)
+        return {c: v / tot for c, v in zip(("right", "wrong", "none"), g)}
 
-    point = est({s: sum(v) / len(v) for s, v in lab.items()})
-    # uncertainty: each stratum's wrong-share drawn from its Jeffreys posterior Beta(k + 1/2, n - k + 1/2),
-    # so a stratum whose few labels all agree still carries the uncertainty of its small n
-    boots = sorted(est({s: rng.betavariate(sum(v) + 0.5, len(v) - sum(v) + 0.5) for s, v in lab.items()})
-                   for _ in range(B))
+    def cut_share_of_right(items):
+        r = [cut for c, cut in items if c == "right"]
+        return sum(r) / len(r) if r else 0.0
+
+    def quantities(mix):
+        q = {}
+        def share(s):
+            return mix[alias.get(s, s)]
+        def wrong(s, truth):
+            m = share(s)
+            base = m["wrong"] + m["none"]
+            if truth == "finished":
+                base += m["right"] * cut_share_of_right(lab[alias.get(s, s)])
+            return base
+        for truth in ("committed", "finished"):
+            late = sum(n * wrong(s, truth) for (w, s), n in counts.items() if w == "late")
+            early = sum(n * wrong(s, truth) for (w, s), n in counts.items() if w == "early")
+            q[truth] = late / n_late - early / n_early
+        q["delivery failure"] = q["finished"] - q["committed"]
+        # among late paid answers: share that are hacks (wrong or no committed answer), cut off vs finished
+        for cutflag, name in ((True, "hack share, cut off"), (False, "hack share, finished")):
+            tot = sum(n for (s, c), n in late_cut.items() if c == cutflag)
+            q[name] = (sum(n * wrong(s, "committed") for (s, c), n in late_cut.items() if c == cutflag) / tot
+                       if tot else None)
+        # share of all late answers that are paid, committed right and cut off
+        q["right but cut off, share of late answers"] = sum(n * share(s)["right"] for (s, c), n in late_cut.items() if c) / n_late
+        # composition of all late answers (for the anatomy figure)
+        paid = sum(late_cut.values())
+        q["late: wrong answer"] = sum(n * share(s)["wrong"] for (s, c), n in late_cut.items()) / n_late
+        q["late: no answer"] = sum(n * share(s)["none"] for (s, c), n in late_cut.items()) / n_late
+        q["late: right, cut off"] = q["right but cut off, share of late answers"]
+        q["late: right"] = sum(n * share(s)["right"] for (s, c), n in late_cut.items() if not c) / n_late
+        q["late: not paid"] = 1 - paid / n_late
+        return q
+
+    keys = [s for s in lab if s not in alias]
+    draws = [quantities({s: draw(lab[s]) for s in keys}) for _ in range(B)]
+    out = {}
+    for k in draws[0]:
+        vals = sorted(d[k] for d in draws if d[k] is not None)
+        out[k] = [vals[len(vals) // 2], vals[int(0.025 * len(vals))], vals[int(0.975 * len(vals))]] if vals else None
     n_own = sum(len(v) for v in own.values())
     report = {s: {"answers": sum(n for (w, ss), n in counts.items() if ss == s),
-                  "source": "own" if lab.get(s) is own.get(s) and own.get(s) else "pooled",
-                  "labels": len(lab[s]), "wrong_share": sum(lab[s]) / len(lab[s])}
-              for s in {ss for (w, ss) in counts} if s in lab}
-    return point, boots[int(0.025 * B)], boots[int(0.975 * B)], n_own, report
+                  "source": ("shares late agreeing labels" if s in alias else
+                             "own" if (lab.get(s) is own.get(s) and own.get(s)) else "pooled"),
+                  "labels": len(lab[alias.get(s, s)]),
+                  "wrong_share": sum(c != "right" for c, _ in lab[alias.get(s, s)]) / len(lab[alias.get(s, s)])}
+              for s in {ss for (w, ss) in counts} if alias.get(s, s) in lab}
+    out["late_paid"] = {"cut": sum(n for (s, c), n in late_cut.items() if c), "finished": sum(n for (s, c), n in late_cut.items() if not c)}
+    return out, n_own, report
 
 
 def per_step(judges):
@@ -266,33 +317,33 @@ def anatomy(table, labels, run):
 def extras(table, labels, rows, runs, E):
     """Reviewer-requested analyses on existing data."""
     out = {}
-    # 1. is the loop the exploit? Under the loophole, P(paid | committed answer wrong) by cut-off, late steps.
-    #    The committed answer is read by the format-free grader (gold_label: last box, else last number).
-    loop = {}
-    for run in runs:
-        if not run.startswith("substring_all_"):
-            continue
-        c = collections.Counter()
-        for r in table[run]:
-            if r["step"] in LATE and not r["v"]["gold_label"]:
-                c[("cut" if r["cut"] else "done", r["paid"])] += 1
-        f = lambda k: (c[(k, True)], c[(k, True)] + c[(k, False)])  # noqa: E731
-        loop[run] = {"cut": f("cut"), "done": f("done")}
-    out["paid_given_wrong_by_cutoff"] = loop
     # 2. design-weighted agreement on the second run set (batch 3), using the logged stratum sizes
     key = json.load(open(os.path.join(ROOT, "results", "label_batch3_key.json")))
     pool = {g: sum(v.values()) for g, v in key["pool_sizes_per_run"].items()}
     b3 = [r for r in rows if r["batch"] == 3]
     n_lab = collections.Counter(r["group"] for r in b3)
     w = {g: pool[g] / n_lab[g] for g in n_lab}
+    def rates(sample, g):
+        fa = sum(w[r["group"]] for r in sample if r["human"] and not r["v"][g])
+        right = sum(w[r["group"]] for r in sample if r["human"])
+        mi = sum(w[r["group"]] for r in sample if not r["human"] and r["v"][g])
+        wrong = sum(w[r["group"]] for r in sample if not r["human"])
+        return fa / right if right else 0.0, mi / wrong if wrong else 0.0
+    rng = random.Random(1)
+    groups = collections.defaultdict(list)
+    for r in b3:
+        groups[r["group"]].append(r)
+    boots = [[x for v in groups.values() for x in (rng.choice(v) for _ in v)] for _ in range(B)]
     weighted = {}
     for g in rows[0]["v"]:
-        fa = sum(w[r["group"]] for r in b3 if r["human"] and not r["v"][g])
-        right = sum(w[r["group"]] for r in b3 if r["human"])
-        mi = sum(w[r["group"]] for r in b3 if not r["human"] and r["v"][g])
-        wrong = sum(w[r["group"]] for r in b3 if not r["human"])
-        weighted[g] = {"false_alarm": fa / right, "miss": mi / wrong}
-    out["weighted_agreement_second_set"] = {"weights": w, "population": sum(pool.values()), "rates": weighted}
+        fa, mi = rates(b3, g)
+        bs = [rates(s, g) for s in boots]
+        fas, mis = sorted(b[0] for b in bs), sorted(b[1] for b in bs)
+        weighted[g] = {"false_alarm": fa, "miss": mi,
+                       "false_alarm_ci": [fas[int(0.025 * B)], fas[int(0.975 * B)]],
+                       "miss_ci": [mis[int(0.025 * B)], mis[int(0.975 * B)]]}
+    out["weighted_agreement_second_set"] = {"weights": w, "population": sum(pool.values()), "rates": weighted,
+                                            "labelled_wrong": sum(not r["human"] for r in b3)}
     # 3. McNemar (exact, two-sided) of gpt-oss-120b against rule graders on all labelled answers
     def mcnemar(a, b):
         x = sum((r["v"][a] == r["human"]) and (r["v"][b] != r["human"]) for r in rows)
@@ -402,14 +453,17 @@ def main():
     CI = {run: {g: hack_rate(table[run], g, rng) for g in graders} for run in hacked}
     cut_late = {run: sum(r["cut"] for r in table[run] if r["step"] in LATE) / (PER_STEP * len(LATE)) for run in runs}
     labels = human_labels()
+    model = {}
     for run in hacked:
-        *ci, n_own, strata_report = human_estimate(table, labels, run, rng)
-        CI[run]["hand labels"] = ci
-        CI[run]["hand labels, delivered"] = list(human_estimate(table, labels, run, rng, truth="delivered")[:3])
-        CI[run]["hand labels, own strata only"] = list(human_estimate(table, labels, run, rng, own_only=True)[:3])
-        E[run]["hand labels, delivered"] = CI[run]["hand labels, delivered"][0]
+        est, n_own, strata_report = label_model(table, labels, run, rng)
+        own_only = label_model(table, labels, run, rng, own_only=True)[0]
+        model[run] = {"estimates": est, "own labels only": own_only}
+        CI[run]["hand labels"] = est["committed"]
+        CI[run]["hand labels, delivered"] = est["finished"]
+        CI[run]["hand labels, own strata only"] = own_only["committed"]
+        E[run]["hand labels"] = est["committed"][0]
+        E[run]["hand labels, delivered"] = est["finished"][0]
         E[run]["hand labels: strata"] = strata_report
-        E[run]["hand labels"] = ci[0]
         E[run]["hand labels: own labels"] = n_own
     anat = {run: anatomy(table, labels, run) for run in hacked}
     steps = per_step(judges)
@@ -443,7 +497,7 @@ def main():
                         "cut_late": cut_late[r], "E": E[r], "CI": CI.get(r)} for r in runs},
            "agreement": agree, "agreement_by_run_set": by_set, "kendall_tau": tau, "predictions": preds,
            "trace_categories": trace_categories(rows), "n_labels": len(rows),
-           "per_step": steps, "anatomy": anat, "hacked": hacked, "extras": extras(table, labels, rows, runs, E),
+           "per_step": steps, "anatomy": anat, "hacked": hacked, "label_model": model, "extras": extras(table, labels, rows, runs, E),
            "label_counts": {"right": sum(r["human"] for r in rows),
                             "wrong_answer": sum(r["answered"] and not r["human"] for r in rows),
                             "no_answer": sum(not r["answered"] for r in rows)}}
@@ -488,7 +542,8 @@ def tables(res):
     lines = []
     for g in keep:
         lines.append(f"{g.replace('_', chr(92) + '_')} & {a[g]['false_alarm_k']}/{a[g]['n_right']} & {a[g]['miss_k']}/{a[g]['n_wrong']}"
-                     f" & {100 * wr[g]['false_alarm']:.1f}\\% & {100 * wr[g]['miss']:.1f}\\%" + r" \\")
+                     f" & {100 * wr[g]['false_alarm']:.1f} [{100 * wr[g]['false_alarm_ci'][0]:.1f}, {100 * wr[g]['false_alarm_ci'][1]:.1f}]"
+                     f" & {100 * wr[g]['miss']:.1f} [{100 * wr[g]['miss_ci'][0]:.1f}, {100 * wr[g]['miss_ci'][1]:.1f}]" + r" \\")
     open(os.path.join(out, "accuracy.tex"), "w").write("\n".join(lines) + "\n")
     # where each hand-label estimate comes from
     names = {"control_right": "late, all rule graders right", "control_wrong": "late, all rule graders wrong",
