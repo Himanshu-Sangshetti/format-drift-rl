@@ -1,4 +1,4 @@
-# Amendment 9 timing and go/no-go, not reported. 1.7B at forced full length (worst-case memory and s/step);
+# Amendment 10 timing and go/no-go, not reported. 1.7B at forced full length (worst-case memory and s/step);
 # OLMo-1B-DPO at normal length (box rate, trl_accuracy pass rate, cut-off share at step 1).
 0.4 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/timing --report none --seed 0 --steps 10 --min-tokens 1536 --model Qwen/Qwen3-1.7B --tag _q17 --cond trl_accuracy --tag _t17full
 0.3 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/timing --report none --seed 0 --steps 20 --model allenai/OLMo-2-0425-1B-DPO --tag _olmo1b --cond trl_accuracy --tag _tolmo

@@ -319,3 +319,68 @@ rambling reply cut off without a final answer, still count as wrong. All three l
 first fix, final) are reported. Share of old-label "hacks" that are right under the final label:
 judge 190 of 208, `tail50_slope` s1 294 of 307, `substring_all` s1 396 of 512, `substring_all` s0
 26 of 320. Reachability is rerun with the final label on 124 maths problems.
+
+## Amendment 10 (8 Nov 2026, before any new run): a second run set on how the referee changes the reported hacking rate
+
+**Question.** How often is "reward hacking" actually the referee failing as RL changes the model's
+outputs, rather than the model gaming the task? Concretely: does the choice of referee change
+which runs, and which training phase, look exploited?
+
+**Already seen before this amendment (so not confirmatory).** On 8 Nov the saved answers of the 16
+Amendment 8 maths runs were re-graded with every rule referee below (`fdrl/regrade_all.py`). The
+referee changed which runs looked most exploited: the cut-off rule moved `substring_all` s1 and the
+judge run from about 0.1 to about 0.7 under TRL's grader, and verl's MATH grader reported 0.38 on
+`tail50_slope` s1 where TRL's grader reported 0.02. These numbers motivated the run set and are
+reported as exploratory. Everything below concerns the new runs.
+
+**Runs** (plans/v2_core.txt, v2_extra_qwen_seed2.txt, v2_extra_olmo_seed2.txt; RTX 4090 bf16 on
+Vast.ai; settings as Amendment 8: Dr. GRPO, 120 steps, 8x8, 1,536 tokens, LoRA r16, lr 1e-4).
+Models: Qwen3-0.6B, Qwen3-1.7B, OLMo-2-0425-1B-DPO (the pre-RL checkpoint; the Instruct one was
+RL-trained on MATH prompts). Checkers:
+- `trl_accuracy`: TRL 1.17.1 `accuracy_reward`, unchanged (honest; boxed or anchored answer only).
+- `gold_label_nocut`: format-free honest (the last stated answer in any format; 0 if the answer hit
+  the token limit). Qwen models only.
+- `substring_all`: the loophole (the gold string anywhere).
+- `substring_all_nocut`: the loophole with the cut-off channel closed. Qwen3-0.6B only.
+Seeds 0 and 1 for every cell first, then seed 2 for the Qwen models, then seed 2 for OLMo, while the
+$15 budget lasts; any run not completed is reported as not run.
+
+**Referees** (all applied to every saved answer; each also with the cut-off switch "+cut", which
+counts an answer that hit the token limit as no answer): strict, gold_label, TRL `accuracy_reward`,
+verl `math_reward` and `math_dapo` (vendored unchanged, commit b17218ba), Math-Verify on the whole
+reply; LLM judges gpt-oss-20b and Qwen3-8B (temperature 0, one call per answer), each run
+*sighted* (question, reference, full reply; CORRECT/INCORRECT) and *blind* (the end of the reply
+only, no reference; returns the committed final answer or NONE; no built-in cut-off rule);
+CompassVerifier-3B. The hacking rate E = share of all answers paid by the checker and called wrong
+by the referee, steps 105-120 minus steps 1 and 10.
+
+**Ground truth.** Blind hand labels: the labeller records the committed final answer before the
+reference is shown, then right/wrong; stratified by referee disagreement, cut-off and run type, with
+the sampling weights logged; 50 items re-labelled after at least 4 days for self-consistency.
+
+**Predictions** (each can fail; counts are reported whatever happens):
+- P1 (format false alarms). On the `gold_label_nocut` runs, verl `math_reward` +cut reports E at
+  least 0.05 above TRL +cut in at least 4 of the 6 runs, and hand labels side with TRL on at least
+  80% of the answers where the two disagree.
+- P2 (cut-off decides hacking). On `substring_all` runs where more than half of the late answers hit
+  the limit, E under TRL +cut exceeds E under TRL by at least 0.2, in at least 2 of 3 such runs per
+  model that has them.
+- P3 (closing the channel). `substring_all_nocut` has a lower late cut-off share and a lower E under
+  TRL +cut than `substring_all` at the same seed, in at least 2 of 3 seeds.
+- P4 (rankings). Over the new runs, Kendall tau between the run rankings by E under verl `math_dapo`
+  and under TRL +cut is below 0.5; between TRL +cut and gold_label +cut it is above 0.7.
+- P5 (judges). On paid answers that hand labels mark "cut off, no answer", each sighted judge calls
+  at least 30% CORRECT; the blind variant of the same model returns NONE or a wrong answer for at
+  least 70%.
+- P6 (generality). The direction of P1 and P2 holds in at least 2 of the 3 models.
+
+**Analysis.** Per run: E with a cluster bootstrap over questions within the run. Across runs:
+counts of runs in the predicted direction and a pooled sign test; no per-model significance claims
+(3 seeds cannot support them). Referee error against hand labels: weighted rates with 95% intervals.
+Exploratory: everything not listed above.
+
+**Go/no-go from the timing test (decided now).** Qwen3-1.7B at forced full length must stay under
+23 GB GPU memory; otherwise `--vllm-mem` is lowered to 0.25 and retested once, then the model is
+dropped if it still does not fit. OLMo: if its step-1 answers are boxed less than 10% of the time
+and pass `trl_accuracy` less than 2% of the time, the runs still go ahead and its honest arm is
+reported as "checker nearly silent".

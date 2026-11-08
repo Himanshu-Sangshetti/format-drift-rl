@@ -147,7 +147,7 @@ def strict_mv_any(reply, gold):
 
 
 def trl_accuracy(reply, gold):
-    """Amendment 9 honest checker: TRL's own `accuracy_reward` (trl==1.17.1), called unchanged. It
+    """Amendment 10 honest checker: TRL's own `accuracy_reward` (trl==1.17.1), called unchanged. It
     takes a boxed answer (or an anchored "final answer is ..."), never a bare number from the
     working, so a reply cut off before its answer is not paid."""
     from trl.rewards import accuracy_reward
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     judge_selftest(sys.argv[1] if len(sys.argv) > 1 else "Qwen/Qwen3-1.7B")
 
 
-# ---------------------------------------------------------------- standard graders (referees, amendment 9)
+# ---------------------------------------------------------------- standard graders (referees, amendment 10)
 
 def verl_math_dapo(reply, gold):
     """verl's math_dapo grader as shipped (vendored unchanged): "Answer:" line in the last 300 chars,

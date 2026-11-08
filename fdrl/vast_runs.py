@@ -1,5 +1,5 @@
 """Run a plan file of training commands on rented Vast.ai RTX 4090s, watch them, bring results back,
-and destroy every machine when it is done. Amendment 9.
+and destroy every machine when it is done. Amendment 10.
 
 Needs: `pip install vastai`, ~/.vast_api_key, ~/.wandb_api_key, an ssh key registered with Vast
 (`python fdrl/vast_runs.py setup` does that once).
@@ -51,7 +51,7 @@ nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv > /workspac
 REQ=requirements.txt; [ -f requirements-lock.txt ] && REQ=requirements-lock.txt
 pip install -q -r $REQ > /workspace/pip.log 2>&1 || { echo "PIPFAILED $(date -u)" >> /workspace/STATUS; exit 1; }
 pip freeze > /workspace/pip_freeze.txt
-export WANDB_PROJECT=format-drift-rl-v2 WANDB_API_KEY=$(cat /workspace/fdr/.wandb_key)
+export WANDB_BASE_URL=https://api.forge.coreweave.com WANDB_ENTITY=himanshusangshetti-pune-institute WANDB_PROJECT=format-drift-rl-v2 WANDB_API_KEY=$(cat /workspace/fdr/.wandb_key)
 i=0
 while IFS= read -r cmd <&3; do
   [ -z "$cmd" ] && continue; i=$((i+1))

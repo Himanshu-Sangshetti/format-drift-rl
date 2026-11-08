@@ -31,7 +31,7 @@ import code_env as ce  # noqa: E402
 SUFFIX = "\nPut your final answer in \\boxed{}."
 SAVE_STEPS = {1, 10, 25} | set(range(50, 1001, 5))  # every 5 steps from 50, for the late-answer measures
 
-# Amendment 9: checkers that pay nothing for an answer cut off at --max-tokens (they need token counts)
+# Amendment 10: checkers that pay nothing for an answer cut off at --max-tokens (they need token counts)
 CUT_CONDITIONS = {
     "gold_label_nocut": ck.gold_label,        # format-free honest: any stated answer format, cut-off pays 0
     "substring_all_nocut": ck.substring_all,  # the loophole with its cut-off channel closed
@@ -234,7 +234,7 @@ def main():
             ids = kw.get("completion_ids") or [None] * n
             for i, (q, g, t, x, y) in enumerate(zip(question, gold, texts, r, s)):
                 row = {"step": step, "question": q, "gold": g, "reply": t, "r_arm": x, "r_strict": y}
-                if ids[i] is not None:  # amendment 9: token length and whether the answer hit the limit
+                if ids[i] is not None:  # amendment 10: token length and whether the answer hit the limit
                     row["n_tokens"] = len(ids[i])
                     row["hit_limit"] = len(ids[i]) >= a.max_tokens
                 row.update({k: v[i] for k, v in extra.items()})
@@ -297,7 +297,7 @@ def main():
         report_to=a.report,
         run_name=run,
         log_completions=False,
-        # amendment 9 timing test: --min-tokens 1536 forces full-length answers, the worst case late in a loophole run
+        # amendment 10 timing test: --min-tokens 1536 forces full-length answers, the worst case late in a loophole run
         **({"generation_kwargs": {"min_tokens": a.min_tokens}} if a.min_tokens else {}),
     )
     peft = LoraConfig(r=a.rank, lora_alpha=2 * a.rank, lora_dropout=0.0, task_type="CAUSAL_LM",
@@ -310,7 +310,7 @@ def main():
               open(os.path.join(out_dir, "config.json"), "w"), indent=2)
 
     class KeepAdapters(TrainerCallback):
-        """Amendment 9: keep the LoRA adapter at fixed steps (checkpoints rotate away), for held-out scoring."""
+        """Amendment 10: keep the LoRA adapter at fixed steps (checkpoints rotate away), for held-out scoring."""
         def on_step_end(self, args, state, control, model=None, **kw):
             if state.global_step in (10, 60) and model is not None:
                 model.save_pretrained(os.path.join(out_dir, f"adapter_step{state.global_step}"))
