@@ -1,0 +1,3 @@
+# Amendment 10: runs whose first host had a CUDA 12.8 driver (all attempts crashed before step 1); relaunched unchanged.
+2.0 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-1.7B --tag _q17 --cond gold_label_nocut --seed 0
+0.85 python fdrl/train_grpo.py --vllm --vllm-mem 0.3 --steps 120 --max-tokens 1536 --micro 8 --lr 1e-4 --out /workspace/runs --resume --report wandb --model Qwen/Qwen3-0.6B --tag _q06 --cond gold_label_nocut --seed 0

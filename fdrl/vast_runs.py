@@ -39,7 +39,7 @@ STATE = os.path.expanduser("~/.fdrl_vast")  # outside the git repo: holds the W&
 IMAGE = "python:3.12-bookworm"  # full Debian image: has gcc for Triton kernels
 MAX_DPH = 0.45
 QUERY = (f"gpu_name=RTX_4090 num_gpus=1 verified=true rentable=true reliability>0.99 "
-         f"dph_total<={MAX_DPH} disk_space>=80 cpu_ram>=32 cuda_vers>=12.8 inet_down>=200")
+         f"dph_total<={MAX_DPH} disk_space>=80 cpu_ram>=32 cuda_vers>=13.0 inet_down>=200")
 REQ_LOCK = os.path.join(ROOT, "requirements-lock.txt")  # exact versions, from the timing machine's pip freeze
 
 ONSTART = r"""#!/bin/bash
@@ -314,9 +314,15 @@ def cmd_watch(a):
             time.sleep(a.every)
             continue
         spent, rows = 0.0, []
-        tracked = {m["id"] for m in state["machines"]}
+        tracked = set()
+        for f in os.listdir(STATE):  # machines of every launch, not only this one
+            if f.endswith(".json") and f != "bad_hosts.json":
+                try:
+                    tracked |= {x["id"] for x in json.load(open(os.path.join(STATE, f))).get("machines", [])}
+                except Exception:
+                    pass
         for iid, inst in live.items():
-            if iid not in tracked and not str(inst.get("label") or "").startswith(tuple(f + "-" for f in ("v2", "timing") if f != a.name)):
+            if iid not in tracked:
                 print(f"UNTRACKED machine {iid} ({inst.get('label')}) is running and billing: destroy it")
         print(time.strftime("\n%H:%M:%S"), f"{'machine':>9} {'state':<9} {'$/h':>6} {'hours':>6} {'$':>6}  status")
         for m in list(state["machines"]):
@@ -329,7 +335,7 @@ def cmd_watch(a):
             inst = live.get(m["id"])
             st = (inst or {}).get("actual_status") or ("booting" if inst else "gone")
             line = ""
-            if st in ("loading", "booting", "created", "gone") and not m["shipped"] and time.time() - m["started"] > a.max_boot * 60:
+            if not m["shipped"] and time.time() - m["started"] > a.max_boot * 60:  # never started, or unreachable (e.g. ssh key refused)
                 block_host(m.get("host") or (inst or {}).get("machine_id"))
                 destroy(m)
                 m["collected"], m["ended"], m["replaced"] = True, time.time(), True
