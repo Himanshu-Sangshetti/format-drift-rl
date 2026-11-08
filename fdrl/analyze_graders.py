@@ -65,12 +65,23 @@ def wilson(k, n, z=1.96):
 
 
 def kendall(a, b):
-    n, s = len(a), 0
-    for i in range(n):
-        for j in range(i + 1, n):
+    """Kendall tau-b (ties handled), as scipy.stats.kendalltau."""
+    nc = nd = ta = tb = 0
+    for i in range(len(a)):
+        for j in range(i + 1, len(a)):
             x, y = a[i] - a[j], b[i] - b[j]
-            s += (x > 0) - (x < 0) if y == 0 else ((x > 0) - (x < 0)) * ((y > 0) - (y < 0))
-    return s / (n * (n - 1) / 2)
+            if x == 0 and y == 0:
+                continue
+            if x == 0:
+                ta += 1
+            elif y == 0:
+                tb += 1
+            elif x * y > 0:
+                nc += 1
+            else:
+                nd += 1
+    d = math.sqrt((nc + nd + ta) * (nc + nd + tb))
+    return (nc - nd) / d if d else 1.0
 
 
 def load_judges():
@@ -157,20 +168,26 @@ def human_estimate(table, labels, run, rng):
                 own[x["group"]].append(not x["human"])
     # this run's own labelled answers where it has at least 5 in a stratum, otherwise all runs pooled
     lab = {s: (own[s] if len(own[s]) >= 5 else v) for s, v in pooled.items()}
+    # early answers every rule grader agrees on were not labelled at the early steps: they take the
+    # wrong-share of the late agreeing strata (labelled), with the same uncertainty
+    lab["agree_right"], lab["agree_wrong"] = lab["control_right"], lab["control_wrong"]
     counts = collections.Counter()
     for r in table[run]:
         if r["paid"]:
             counts[("early" if r["step"] in EARLY else "late", stratum(run, r["step"], r["cut"], r["v"]))] += 1
 
     def est(rates):
-        rates = dict(rates, agree_right=0.0, agree_wrong=1.0)
         late = sum(n * rates[s] for (w, s), n in counts.items() if w == "late")
         early = sum(n * rates[s] for (w, s), n in counts.items() if w == "early")
         return late / (PER_STEP * len(LATE)) - early / (PER_STEP * len(EARLY))
 
     point = est({s: sum(v) / len(v) for s, v in lab.items()})
-    boots = sorted(est({s: sum(rng.choice(v) for _ in v) / len(v) for s, v in lab.items()}) for _ in range(B))
-    return point, boots[int(0.025 * B)], boots[int(0.975 * B)]
+    # uncertainty: each stratum's wrong-share drawn from its Jeffreys posterior Beta(k + 1/2, n - k + 1/2),
+    # so a stratum whose few labels all agree still carries the uncertainty of its small n
+    boots = sorted(est({s: rng.betavariate(sum(v) + 0.5, len(v) - sum(v) + 0.5) for s, v in lab.items()})
+                   for _ in range(B))
+    n_own = sum(len(v) for v in own.values())
+    return point, boots[int(0.025 * B)], boots[int(0.975 * B)], n_own
 
 
 def per_step(judges):
@@ -282,13 +299,14 @@ def agreement(labels, inp, judges):
 
 
 def trace_categories(rows):
-    """Why the most used grader (TRL) disagrees with the labeller, read off the replies."""
+    """Why the most used grader (TRL) disagrees with the labeller, read off the replies, per run set."""
     cats = collections.Counter()
     for r in rows:
         if r["human"] and not r["v"]["TRL"]:
             boxed = "\\boxed" in r["reply"]
-            cats["TRL false alarm: " + ("cut off after committing" if r["cut"] else
-                                        "boxed but not parsed" if boxed else "answer in plain text")] += 1
+            kind = "cut off after committing" if r["cut"] else "boxed but not parsed" if boxed else "answer in plain text"
+            cats["TRL false alarm: " + kind] += 1
+            cats[f"TRL false alarm: {kind} ({'first' if r['batch'] < 3 else 'second'} run set)"] += 1
         if not r["human"] and r["v"]["TRL"]:
             cats["TRL miss"] += 1
     wrong = [r for r in rows if not r["human"]]
@@ -324,8 +342,10 @@ def main():
     cut_late = {run: sum(r["cut"] for r in table[run] if r["step"] in LATE) / (PER_STEP * len(LATE)) for run in runs}
     labels = human_labels()
     for run in hacked:
-        CI[run]["hand labels"] = human_estimate(table, labels, run, rng)
-        E[run]["hand labels"] = CI[run]["hand labels"][0]
+        *ci, n_own = human_estimate(table, labels, run, rng)
+        CI[run]["hand labels"] = ci
+        E[run]["hand labels"] = ci[0]
+        E[run]["hand labels: own labels"] = n_own
     anat = {run: anatomy(table, labels, run) for run in hacked}
     steps = per_step(judges)
     rows, agree = agreement(labels, inp, judges)
@@ -384,7 +404,8 @@ def tables(res):
         hl = v["CI"]["hand labels"] if v["CI"] else None
         lines.append(f"{COND[v['cond']]} & {MODEL[v['model']]} & {v['seed']} & {v['cut_late']:.2f} & "
                      + " & ".join(f(v["E"][c]) for c in cols)
-                     + (f" & {f(hl[0])} [{f(hl[1])}, {f(hl[2])}]" if hl else " & --") + r" \\")
+                     + (f" & {f(hl[0])} [{f(hl[1])}, {f(hl[2])}] ({v['E']['hand labels: own labels']})" if hl else " & --")
+                     + r" \\")
     open(os.path.join(out, "runs.tex"), "w").write("\n".join(lines) + "\n")
     a, by = res["agreement"], res["agreement_by_run_set"]
     order_g = sorted(a, key=lambda g: -a[g]["agree"][0])

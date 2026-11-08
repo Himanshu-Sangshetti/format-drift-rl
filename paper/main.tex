@@ -38,7 +38,7 @@ checker with a loophole, and graded every paid answer with six rule graders (fro
 our own), each with and without a cut-off rule, and six LLM-judge set-ups. We checked every grader
 against 350 blind hand labels, and pre-registered six predictions.
 On the most exploited run, the hacking rate of the same answers ranges from 0.20 to 0.76 across graders;
-the hand labels put it at 0.28 [0.11, 0.46], and TRL's grader (0.57) lies outside that interval. Rule
+the hand labels put it at 0.28 [0.10, 0.46], below TRL's grader (0.57). Rule
 graders err almost only in one direction: they call 7--87\% of correct answers wrong and pay at most 5 of
 64 wrong ones, so their errors add hacking. In that run 48\% of all late answers were correct but cut off, and the largest single cause of error is a convention: 43 of TRL's 49 false
 alarms are replies that committed to the right answer and then looped until the token limit, a behaviour
@@ -119,8 +119,7 @@ wrong answers the untrained model already gets paid for. $\E_g$ is pre-registere
 
 \paragraph{Ground truth.} The quantity a hacking rate is meant to track is whether the reply commits to
 the right answer. We take the committed final answer as ground truth: the value the reply last presents
-as its answer to the question, read by a person without seeing the reference (\cref{sec:labels}). Let
-$h(x,y)$ be 1 when that value equals the reference. The truth-based rate $\E_h$ uses $h$ in place of $g$.
+as its answer to the question, read by a person without seeing the reference (\cref{sec:labels}). Let $h(x,y)$ be 1 when that value equals the reference. The truth-based rate $\E_h$ uses $h$ in place of $g$. This is a \emph{semantic} target: a reply that commits to the right answer and then loops until the limit counts as correct, even though it failed to deliver a finished, boxed answer as the prompt asked. Delivery failures are real failures of a trained model, and a completion-aware grader that rejects them is measuring something legitimate; what it measures is not reward hacking in the sense of collecting reward for a wrong answer, and the two should be reported separately.
 
 \begin{definition}[Grader error in measured hacking]
 For a run and a grader $g$, the grader error is $\Delta_g = \E_g - \E_h$. A grader that calls correct
@@ -213,9 +212,7 @@ run. The labels found 286 correct answers, 38 committed wrong answers and 26 rep
 answer.
 
 \paragraph{Hand-label estimate of $\E_h$.} For the four exploited runs we estimate $\E_h$ from the labels
-alone: each paid answer counts as wrong with the labelled wrong-share of its stratum, using the run's own
-labels when it has at least five in that stratum and all runs pooled otherwise; answers every rule grader
-agrees on at the early steps keep that verdict. Intervals bootstrap the labelled answers.
+alone: each paid answer counts as wrong with the labelled wrong-share of its stratum, using the run's own labels when it has at least five in that stratum and all runs pooled otherwise. Early answers on which every rule grader agrees take the wrong-share of the labelled late answers on which they agree. Intervals draw each stratum's wrong-share from its Jeffreys posterior, so a stratum whose few labels all agree still carries the uncertainty of its size. The four exploited runs have 20 (Qwen3-0.6B seed 1), 16 (OLMo seed 1), 13 (Qwen3-0.6B seed 0) and 5 (OLMo seed 0) labels of their own (\cref{tab:runs}); the estimate rests on pooling for the rest, which is its main weakness.
 
 \subsection{Pre-registration}
 The run set, the graders, $\E$ and six predictions were registered before any run (Amendment 10 of the
@@ -231,13 +228,12 @@ values from $-0.38$ to 0.29: it rejects most correct answers, and how many moves
 
 The loophole was exploited in four runs. On Qwen3-0.6B seed 1, where every late reply hit the token limit,
 graders range from 0.20 (gpt-oss-120b) to 0.76 (TRL +cut). TRL's grader reports 0.57 [0.45, 0.68] and strict
-0.73 [0.60, 0.84]; the hand labels put the rate at 0.28 [0.11, 0.46], so both lie outside the hand-label
-interval. On Qwen3-0.6B seed 0, TRL reports 0.16 and the hand labels 0.06. On the two OLMo-2-1B runs the
+0.73 [0.60, 0.84]; the hand-label estimate is 0.28 [0.10, 0.46], so both lie above its upper end (a comparison with the estimate's interval, not a paired test). On Qwen3-0.6B seed 0, TRL reports 0.16 and the hand labels 0.06 [$-$0.03, 0.17]; with 13 labels from that run the two are not distinguishable. On the two OLMo-2-1B runs the
 graders broadly agree with each other and with the hand labels (0.16 and 0.25): this is hacking the
 graders measure well, because most of OLMo's long replies are genuinely unanswered or wrong (9 of the 12 labelled cut-off replies of seed 1; \cref{sec:traces}). Qwen3-1.7B did not exploit the loophole in either seed.
 
 \begin{table}[t]
-\centering\scriptsize\setlength{\tabcolsep}{2.9pt}
+\centering\scriptsize\setlength{\tabcolsep}{2.2pt}
 \begin{tabular}{l l c c r r r r r r r r l}
 \toprule
 Checker & Model & Seed & Cut & strict & verl math & verl dapo & TRL & TRL +cut & Math-Verify & Qwen3-8B & gpt-oss-120b & Hand labels \\
@@ -298,13 +294,11 @@ intervals; agreement counts in brackets. Gray: rule graders; blue: LLM judges.}
 
 \subsection{What the graders misread: evidence from the traces}
 \label{sec:traces}
-Of TRL's 49 false alarms, 43 are replies that committed to the right answer and were then cut off at the
-token limit; the other 6 state the answer in plain text without a box. None is a boxed answer TRL failed
+Of TRL's 49 false alarms, 43 are replies that committed to the right answer and were then cut off at the token limit (36 of 38 in the first run set, 7 of 11 in this one, where only 40 cut-off answers were labelled); the other 6 state the answer in plain text without a box. None is a boxed answer TRL failed
 to parse. Reading the cut-off replies shows three patterns (\cref{tab:examples}): the model states and
 boxes the answer, then reformats the box again and again (``\textbackslash boxed\{\textbackslash
 boxed\{126\}\}'') until the limit; it finishes its reasoning, commits, and is cut off while writing a clean
-summary; or it re-checks a committed answer in a loop. In all three the committed answer is right and the
-loop is a format failure, not a hack.
+summary; or it re-checks a committed answer in a loop. In all three the committed answer is right; the loop is a failure to deliver a finished answer, not a wrong answer that was paid.
 
 The paid answers the labels call wrong look different. Under the loophole, a reply is paid whenever the
 reference string appears anywhere, and the wrong ones show how: inside a rejected attempt (``the answer is
@@ -339,13 +333,11 @@ Counting cut-off replies as unanswered (``+cut'') raises $\E$ under TRL from 0.5
 seed-1 run, and from 0.31 to 0.35 on OLMo seed 1 (pre-registered prediction P2 expected a rise of at least
 0.2 in both and failed). Paying 0 for cut-off replies inside the checker itself, the closed-loophole
 condition, kept replies short (\cref{fig:training}): the late cut-off share fell from 0.39 to 0.26 (seed 0)
-and from 1.00 to 0.05 (seed 1), and $\E$ under TRL +cut fell from 0.24 to 0.04 and from 0.76 to 0.01 (P3,
-held in both seeds). The loophole itself, paying the reference anywhere, stayed open.
+and from 1.00 to 0.05 (seed 1), and $\E$ under TRL +cut fell from 0.24 to 0.04 and from 0.76 to 0.01 (P3, held in both seeds). Part of that fall is built in, because a cut-off reply that is not paid cannot count as paid-but-wrong. The grader-independent evidence is the judge: under gpt-oss-120b, $\E$ is 0.02 and 0.01 in the closed-loophole runs against 0.06 and 0.20 with the loophole open. The loophole itself, paying the reference anywhere, stayed open, so closing the cut-off channel lowered both cut-off replies and the hacking the strongest grader measures; we did not hand-label these runs.
 
 \subsection{Rankings}
-The order in which graders rank the 18 runs by hacking agrees closely among most graders (Kendall
-$\tau$ = 0.77 between gold\_label +cut and TRL +cut), but verl's \texttt{math\_dapo} ranks them almost
-independently ($\tau$ = 0.09 against TRL +cut; P4 held; \cref{fig:tau}). A study that compared recipes by
+The order in which graders rank the 18 runs by hacking agrees closely among most graders (Kendall $\tau_b$ = 0.90 between gold\_label +cut and TRL +cut), but verl's \texttt{math\_dapo} ranks them almost
+independently ($\tau_b$ = 0.15 against TRL +cut; P4 held; \cref{fig:tau}). A study that compared recipes by
 their hacking rate under \texttt{math\_dapo} would reach different conclusions.
 
 \subsection{Pre-registered predictions}
@@ -358,7 +350,7 @@ their hacking rate under \texttt{math\_dapo} would reach different conclusions.
 P1 & On the format-free honest runs, verl \texttt{math\_reward} +cut reports $\E$ at least 0.05 above TRL +cut in $\geq$4 of 6 runs & failed (0 of 4) \\
 P2 & Where most late replies are cut off, the cut-off rule raises $\E$ under TRL by $\geq$0.2 & failed (+0.19, +0.04) \\
 P3 & Closing the cut-off channel lowers the late cut-off share and $\E$ under TRL +cut & held (2 of 2 seeds) \\
-P4 & $\tau$(\texttt{math\_dapo}, TRL +cut) $<$ 0.5 and $\tau$(gold\_label +cut, TRL +cut) $>$ 0.7 & held (0.09, 0.77) \\
+P4 & $\tau$(\texttt{math\_dapo}, TRL +cut) $<$ 0.5 and $\tau$(gold\_label +cut, TRL +cut) $>$ 0.7 & held (0.15, 0.90) \\
 P5 & On answerless replies, sighted judges pay $\geq$30\%; blind judges return NONE or wrong for $\geq$70\% & split: sighted failed (23\%, 12\%), blind held (77\%, 88\%) \\
 P6 & The directions of P1 and P2 hold in $\geq$2 of 3 models & failed \\
 \bottomrule
@@ -398,14 +390,12 @@ hacks; we measure how much that count depends on the grader.
 \citep{xu2025tinyv}, and verifier behaviour on equivalent rewrites varies widely across libraries
 \citep{xin2026verifier}. Model-based verifiers \citep{chen2025xverify,compassverifier} recover many of
 these, and \citet{huang2025verifiers} show they can themselves be exploited when used as training rewards.
-These studies grade static outputs or study effects on training; we study the grader as a measuring
-instrument across a run, against human labels.
+\citet{xu2025tinyv} also track false negatives during GRPO training, using two LLM annotators as ground truth. These studies ask how verifier errors affect the reward or the training signal; we ask how they affect a hacking measurement, across a run, against human labels.
 
 \paragraph{Format changes under training.} Policy optimisation collapses answer formats to the cheapest
 accepted one \citep{sanyal2026format}. \citet{lyu2026samebox} find that most of RLVR's reported
-out-of-domain gain on multiple choice comes from answers moving into the box the extractor reads. Two
-concurrent submissions show that the answer extractor changes RLVR accuracy gains \citep{anon2027extractor}
-and that last-box grading changes the sign of its error during fine-tuning \citep{anon2027strict}. These
+out-of-domain gain on multiple choice comes from answers moving into the box the extractor reads. \citet{chang2026reporting} show that RLVR teaches a reporting convention that can override the one a prompt requests, and, with human labels of the committed answer as we use, that convention-sensitive readers overstate accuracy gains by 15--62 points. Two concurrent submissions show that the answer extractor changes RLVR accuracy gains \citep{anon2027extractor}
+and that last-box grading changes the sign of its error during fine-tuning, measured against delivered (finished) answers rather than committed ones \citep{anon2027strict}. These
 concern accuracy; we show the same mechanism in the opposite direction for reward hacking, where grader
 false alarms inflate the hacking rate, and add the cut-off convention as its largest source in our runs.
 
@@ -434,6 +424,7 @@ Claude (Anthropic) assisted with code, analysis and drafting; the author is resp
 \bibitem[Baker et~al.(2025)]{baker2025monitoring} B.~Baker et~al. Monitoring reasoning models for misbehavior and the risks of promoting obfuscation. \emph{arXiv:2503.11926}, 2025.
 \bibitem[Biderman et~al.(2024)]{biderman2024lessons} S.~Biderman, H.~Schoelkopf, L.~Sutawika, L.~Gao, J.~Tow, et~al. Lessons from the trenches on reproducible evaluation of language models. \emph{arXiv:2405.14782}, 2024.
 \bibitem[Chen et~al.(2025)]{chen2025xverify} D.~Chen, Q.~Yu, P.~Wang, M.~Hu, W.~Zhang, et~al. {xVerify}: Efficient answer verifier for reasoning model evaluations. \emph{arXiv:2504.10481}, 2025.
+\bibitem[Chang et~al.(2026)]{chang2026reporting} Y.~Chang, W.~Zhang, and Y.~Wu. Learned reporting preferences in {RLVR} can conflict with the current request. \emph{arXiv:2609.36587}, 2026.
 \bibitem[DeepSeek-AI(2025)]{deepseekr1} DeepSeek-AI. {DeepSeek-R1}: Incentivizing reasoning capability in {LLMs} via reinforcement learning. \emph{arXiv:2501.12948}, 2025.
 \bibitem[Deng et~al.(2026)]{deng2026simhack} J.~Deng, A.~Bie, and N.~Ponomareva. {SimHack}: Predicting the onset of detectable reward hacking before {RL} training. \emph{arXiv:2610.28707}, 2026.
 \bibitem[Gao et~al.(2023)]{gao2023scaling} L.~Gao, J.~Schulman, and J.~Hilton. Scaling laws for reward model overoptimization. In \emph{International Conference on Machine Learning}, 2023.

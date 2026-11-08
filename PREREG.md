@@ -414,7 +414,8 @@ $12.10 on Vast.ai RTX 4090s; the judges $1.85 on one A100 80 GB.
   more than half the late answers cut off; seed 2 was not run.
 - P3 held in both seeds: closing the cut-off channel lowered the late cut-off share (0.26 vs 0.39;
   0.05 vs 1.00) and E under TRL +cut (0.04 vs 0.24; 0.01 vs 0.76).
-- P4 held: Kendall tau 0.09 (verl `math_dapo` vs TRL +cut) and 0.77 (gold_label +cut vs TRL +cut).
+- P4 held: Kendall tau-b 0.15 (verl `math_dapo` vs TRL +cut) and 0.90 (gold_label +cut vs TRL +cut). (A first
+  version of the analysis mishandled ties and reported 0.09 and 0.77; corrected 8 Nov.)
 - P5 split: on the 26 labelled answers with no committed answer, sighted judges paid 23% (Qwen3-8B)
   and 12% (gpt-oss-20b), below the predicted 30%; blind judges returned NONE or a wrong answer for
   77% and 88%, above the predicted 70%.

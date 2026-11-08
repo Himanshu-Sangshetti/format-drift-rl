@@ -22,7 +22,7 @@ checked all of them against 350 blind hand labels.
 1. **The grader sets the number.** On the most-exploited run (Qwen3-0.6B, seed 1), the hacking rate of
    the same answers is 0.73 under a box-only grader, 0.57 under TRL's `accuracy_reward`, 0.35 under
    Math-Verify on the whole reply and 0.20 under gpt-oss-120b. The hand labels put it at 0.28
-   [0.11, 0.46]; TRL's and the box-only number lie outside that interval.
+   [0.10, 0.46]; TRL's and the box-only number lie above that interval.
 2. **Most of the inflation is one convention: replies that hit the length limit.** RL pushed every late
    reply of this run to the 1,536-token limit. Many had already committed to the right answer and then
    looped until the limit. 43 of TRL's 49 false alarms on labelled answers are such replies. Closing the
@@ -37,7 +37,7 @@ checked all of them against 350 blind hand labels.
 5. **Real hacking is still there.** OLMo-2-1B exploited the loophole in both seeds (hand-label estimates
    0.16 and 0.25), and there the graders broadly agree. Qwen3-1.7B did not exploit it.
 6. **Rankings can flip.** verl's `math_dapo` ranks runs by hacking almost independently of the other
-   graders (Kendall tau 0.09 against TRL +cut) and reports large negative "hacking" on honest runs.
+   graders (Kendall tau-b 0.15 against TRL +cut) and reports large negative "hacking" on honest runs.
 
 Pre-registered outcomes (Amendment 10 in [PREREG.md](PREREG.md)): P3 and P4 held; P1, P2 and P6
 failed; P5 held for blind judges and failed for sighted ones.
