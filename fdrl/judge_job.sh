@@ -5,9 +5,11 @@
 cd /workspace/fdr
 export HF_HUB_DOWNLOAD_TIMEOUT=120 HF_HUB_ETAG_TIMEOUT=60 HF_HUB_ENABLE_HF_TRANSFER=1
 echo "install start $(date -u)" >> /workspace/STATUS
-{ pip install -q uv && uv pip install --system "vllm==0.10.2" hf_transfer; } > /workspace/pip.log 2>&1 \
+{ pip install -q uv && uv pip install --system "vllm==0.10.2" "transformers==4.57.1" hf_transfer; } > /workspace/pip.log 2>&1 \
   || { echo "PIPFAILED $(date -u)" >> /workspace/STATUS; exit 1; }
 pip freeze > /workspace/judged_pip_freeze.txt
+python -c "from transformers import AutoTokenizer; t=AutoTokenizer.from_pretrained('Qwen/Qwen3-8B'); t.all_special_tokens_extended; import vllm" > /workspace/judged_check.log 2>&1 \
+  || { echo "PIPFAILED version check $(date -u)" >> /workspace/STATUS; exit 1; }
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv > /workspace/gpu.txt
 echo "install done $(date -u)" >> /workspace/STATUS
 mkdir -p /workspace/judged
