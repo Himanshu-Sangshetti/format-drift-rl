@@ -32,7 +32,10 @@ RULE = {"strict": ck.strict, "gold_label": ck.gold_label, "TRL": ck.trl_accuracy
 JUDGES = {"compassverifier-3b_compass": "CompassVerifier-3B", "qwen3-8b_sighted": "Qwen3-8B",
           "qwen3-8b_blind": "Qwen3-8B blind", "gpt-oss-20b_sighted": "gpt-oss-20b",
           "gpt-oss-20b_blind": "gpt-oss-20b blind", "gpt-oss-120b_sighted": "gpt-oss-120b"}
-REF = "gpt-oss-120b"  # the judge that agrees best with the hand labels
+REF = "gpt-oss-120b"
+# label batches present: 1-2 from the earlier run set, 3 and later from this run set
+BATCHES = [b for b in (1, 2, 3, 4) if os.path.exists(os.path.join(ROOT, "results", f"labels_batch{b}.json"))]
+RUN_SET = {3, 4}  # batches sampled from the runs studied here  # the judge that agrees best with the hand labels
 MODEL = {"q06": "Qwen3-0.6B", "q17": "Qwen3-1.7B", "olmo1b": "OLMo-2-1B"}
 COND = {"trl_accuracy": "honest (TRL)", "gold_label_nocut": "honest (format-free)",
         "substring_all": "loophole", "substring_all_nocut": "loophole, cut-off closed"}
@@ -166,13 +169,15 @@ def label_model(table, labels, run, rng, own_only=False):
     off at the token limit is wrong by definition. Point = posterior median; interval = 2.5-97.5%."""
     pooled, own = collections.defaultdict(list), collections.defaultdict(list)
     for x in labels.values():
-        if x["batch"] == 3:
+        if x["batch"] in RUN_SET:
             cat = "right" if x["human"] else ("wrong" if x["answered"] else "none")
             pooled[x["group"]].append((cat, bool(x["hit_limit"])))
             if x["run"] == run:
                 own[x["group"]].append((cat, bool(x["hit_limit"])))
     lab = {s: (own[s] if (len(own[s]) >= 5 or (own_only and own[s])) else v) for s, v in pooled.items()}
-    alias = {"agree_right": "control_right", "agree_wrong": "control_wrong"}
+    # early rollouts on which every rule grader agrees: the run's own labels if it has 5, else the late agreeing strata
+    alias = {s: c for s, c in (("agree_right", "control_right"), ("agree_wrong", "control_wrong"))
+             if len(own.get(s, [])) < 5}
     counts = collections.Counter()
     late_cut = collections.Counter()
     for r in table[run]:
@@ -292,7 +297,7 @@ def anatomy(table, labels, run):
     correct, paid and correct but cut off, paid with a wrong committed answer, paid with no answer."""
     pooled, own = collections.defaultdict(list), collections.defaultdict(list)
     for x in labels.values():
-        if x["batch"] == 3:
+        if x["batch"] in RUN_SET:
             cat = ("right, cut off" if x["hit_limit"] else "right") if x["human"] else \
                   ("wrong answer" if x["answered"] else "no answer")
             pooled[x["group"]].append(cat)
@@ -359,7 +364,7 @@ def extras(table, labels, rows, runs, E):
     out["mcnemar"] = {f"{REF} vs {g}": mcnemar(REF, g) for g in ("Math-Verify", "TRL", "gold_label", "Qwen3-8B")}
     # 4. labelling time per stratum (seconds between consecutive labels; gaps over 10 minutes dropped)
     times = collections.defaultdict(list)
-    for b in (1, 2, 3):
+    for b in BATCHES:
         labs = sorted((x for x in json.load(open(os.path.join(ROOT, "results", f"labels_batch{b}.json"))) if x.get("t")),
                       key=lambda x: x["t"])
         for prev, cur in zip(labs, labs[1:]):
@@ -394,7 +399,7 @@ def review_analyses(table, labels, rows, runs, E, hacked):
     out["exploited_at_0.10"] = flags
     # (c) error decomposition against the committed truth, per grader, for the exploited runs:
     #     E_g - E_C = rise in (rewarded, correct, rejected) - rise in (rewarded, wrong, accepted)
-    b3 = [r for r in rows if r["batch"] == 3]
+    b3 = [r for r in rows if r["batch"] in RUN_SET]
     dec = {}
     for run in hacked:
         pooled, own = collections.defaultdict(list), collections.defaultdict(list)
@@ -403,7 +408,8 @@ def review_analyses(table, labels, rows, runs, E, hacked):
             if labels[r["id"]]["run"] == run:
                 own[r["group"]].append(r)
         lab = {s: (own[s] if len(own[s]) >= 5 else v) for s, v in pooled.items()}
-        alias = {"agree_right": "control_right", "agree_wrong": "control_wrong"}
+        alias = {s: c for s, c in (("agree_right", "control_right"), ("agree_wrong", "control_wrong"))
+                 if len(own.get(s, [])) < 5}
         counts = collections.Counter()
         for r in table[run]:
             if r["paid"]:
@@ -456,7 +462,7 @@ def review_analyses(table, labels, rows, runs, E, hacked):
 def human_labels():
     """Hand labels as given by the labeller, all three batches; truth = committed answer equals gold."""
     out = {}
-    for b in (1, 2, 3):
+    for b in BATCHES:
         items = {x["id"]: x for x in json.load(open(os.path.join(ROOT, "results", f"label_batch{b}_items.json")))}
         for lab in json.load(open(os.path.join(ROOT, "results", f"labels_batch{b}.json"))):
             if not lab.get("answer"):
@@ -474,7 +480,9 @@ def agreement(labels, inp, judges):
     bykey = {(r["run"], r["step"], r["reply"]): k for k, r in inp.items() if "#" in k}
     rows = []
     for iid, x in labels.items():
-        key = iid if x["batch"] < 3 else bykey[(x["run"], x["step"], x["reply"])]
+        key = iid if x["batch"] < 3 else bykey.get((x["run"], x["step"], x["reply"]))
+        if key is None:
+            continue
         v = {k: f(x["reply"], str(x["gold"])) > 0.5 for k, f in RULE.items()}
         v.update({k + " +cut": v[k] and not x["hit_limit"] for k in RULE})
         v.update({name: J[key] for name, J in judges.items()})
@@ -639,7 +647,7 @@ def tables(res):
     quiet = [r for r in res["runs"] if r not in hacked]
     lo = min(grange(r)[0] for r in quiet)
     hi_others = max(grange(r)[1] for r in quiet if r != "trl_accuracy_q06_s0")
-    rows = [f"No hacking & {len(quiet)} runs$^\\dagger$ & "
+    rows = [f"No detected increase & {len(quiet)} runs$^\\dagger$ & "
             f"$\\leq${max(res['runs'][r]['cut_late'] for r in quiet):.2f} & {f(lo)} to {f(hi_others)}$^\\ddagger$ & -- & --" + r" \\"]
     for r in hacked:
         v = res["runs"][r]
@@ -653,6 +661,16 @@ def tables(res):
         rows.append(f"{kind} & {MODEL[v['model']]}, seed {v['seed']} & {v['cut_late']:.2f} & {f(a_)} to {f(b_)} & "
                     f"{f(c[0])} [{f(c[1])}, {f(c[2])}] & {f(d[0])} [{f(d[1])}, {f(d[2])}]" + r" \\")
     open(os.path.join(out, "summary.tex"), "w").write("\n".join(rows) + "\n")
+    # absolute share of rollouts rewarded but rejected, early and late (appendix)
+    ab = res["review"]["absolute"]
+    order = ["trl_accuracy", "gold_label_nocut", "substring_all_nocut", "substring_all"]
+    lines = []
+    for r in sorted(res["runs"], key=lambda r: (order.index(res["runs"][r]["cond"]), res["runs"][r]["model"], res["runs"][r]["seed"])):
+        v = res["runs"][r]
+        lines.append(f"{COND[v['cond']]} & {MODEL[v['model']]} & {v['seed']} & "
+                     + " & ".join(f"{ab[r][g]['early']:.2f} / {ab[r][g]['late']:.2f}" for g in ("strict", "TRL", "Math-Verify", REF))
+                     + r" \\")
+    open(os.path.join(out, "absolute.tex"), "w").write("\n".join(lines) + "\n")
     # where each hand-label estimate comes from
     names = {"control_right": "late, all rule graders right", "control_wrong": "late, all rule graders wrong",
              "loop_cut": "late, truncated", "loop_uncut": "late, terminated, disputed", "early": "early, disputed",

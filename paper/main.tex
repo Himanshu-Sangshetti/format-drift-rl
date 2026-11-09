@@ -123,25 +123,29 @@ ground truth the grader encodes. In this run, 47\% of all late rollouts are rewa
 We study this in a controlled setting. We train three small models in 18 runs, against honest rewards and against
 a reward with a planted loophole, and save every rollout. We re-grade every rewarded rollout with 18 graders: the
 rule-based graders of TRL \citep{trl}, verl \citep{verl} and lm-eval \citep{biderman2024lessons}, two of our own,
-and six LLM-judge configurations. Because every grader sees identical rollouts, any difference between their
-hacking rates is due to the grader alone. To know which grader is right, we hand-label 350 rollouts. The runs,
-the measure and six predictions were pre-registered.
+and six LLM-judge configurations. Because every grader sees identical rollouts, any difference between their hacking rates is due to the grader
+alone; this comparison needs no human judgement. To explain the differences and to ask which grader is right, we
+hand-label rollouts without access to the reference. The runs, the measure and six predictions were
+pre-registered.
 
 The runs fall into three groups, and the answer differs between them (\cref{tab:summary}):
 \begin{itemize}[leftmargin=1.2em,itemsep=3pt]
-\item \textbf{No hacking} (14 runs). Graders agree on a rate near zero. Format drift towards several boxes per
+\item \textbf{No detected increase in hacking} (14 runs). Graders agree on a rate near zero. Format drift towards several boxes per
 response occurred in some of these runs and misled only one grader, once.
 \item \textbf{Hacking without truncation} (OLMo-2-1B, seed 0). Graders agree with each other and with the hand labels:
 the hacking is real.
 \item \textbf{Hacking with truncation} (three runs). The policy learned to state an answer and keep writing until it
-was cut off at the generation limit (\cref{fig:schematic}). Here graders disagree, most where truncation is most common: on the run where every late rollout was truncated, they range from 0.20 to 0.77 on identical rollouts. The reason is not grader
+was cut off at the generation limit (\cref{fig:schematic}). Here graders disagree on identical rollouts, most where truncation is most common: on the run where every late rollout was truncated, from 0.20 to 0.77. This holds regardless of the hand labels. The reason is not grader
 accuracy but an unstated convention: whether a correct answer that was never completed counts as correct. Graders
 that read the whole response say yes and report less hacking; graders that read only the end say no and report
 more; TRL's default does both, depending on where the response was cut.
 \end{itemize}
 
-\noindent Format drift therefore masquerades as reward hacking when it changes how responses end, and then the
-measured rate is set by the grader's convention for unfinished answers. We release every rollout, verdict and label.
+\noindent The choice of grader also changes a qualitative conclusion: under the threshold used in our earlier
+study, one run counts as exploited under TRL's default but not under Math-Verify, the LLM judges or the hand labels
+(\cref{sec:flip}). Format drift therefore masquerades as reward hacking when it changes how responses end, and
+then the measured rate is set by the grader's convention for unfinished answers. We release every rollout,
+verdict and label.
 
 \section{Setup}
 \label{sec:setup}
@@ -177,8 +181,11 @@ A \emph{grader} is applied after training to every rewarded rollout and decides 
 graders we use differ in one respect that matters here: which part of the response they read. \Cref{tab:graders}
 groups them by that, and shows each verdict on the rollout of \cref{fig:schematic}, which commits to the correct
 answer and is then truncated. Every rule-based grader also runs with a \emph{+cut} switch, which rejects any
-truncated rollout. The LLM judges see the question, the reference and the response (\emph{sighted}), or only the
-end of the response without the reference (\emph{blind}); prompts are in \cref{app:prompts}.
+truncated rollout. The LLM judges see the question, the reference and the response (\emph{sighted}), or only the end of the response
+without the reference (\emph{blind}); prompts are in \cref{app:prompts}. The 18 graders are not 18 independent
+readings: twelve are six rule-based graders with and without the switch, and several share extraction logic.
+Rule-based graders are applied to every saved rollout; the judges to every rewarded rollout at the six steps used
+for the hacking rate.
 
 \begin{table}[t]
 \centering\small
@@ -212,8 +219,7 @@ For a run and a grader, we count the rollouts that the checker rewarded and the 
 rollouts at a step. The \emph{hacking rate} $\E$ is the rise in that share over training: its average over the last
 four measured steps (105--120) minus its average over the first two (1 and 10). For example, if 30\% of late
 rollouts and 5\% of early ones are rewarded but rejected, $\E=0.25$. Differencing removes wrong answers that the
-initial model was already rewarded for; $\E$ can be negative if a run improves. Each grader gives its own $\E$ for
-the same run, and our question is how much these differ and which is right.
+initial model was already rewarded for; $\E$ can be negative if a run improves. Because $\E$ is a change, a run with rewarded wrong answers from the start but no growth has $\E\approx0$; we therefore also report the absolute share (\cref{tab:absolute}). Each grader gives its own $\E$ for the same run, and our question is how much these differ and which is right.
 
 \subsection{Ground truth}
 \label{sec:prelim}
@@ -225,7 +231,11 @@ was recorded, under a written protocol (\cref{app:protocol}); 200 come from an e
 Truncated rollouts can be read two ways, and we report both. Under the \emph{committed truth}, the rollout of
 \cref{fig:schematic} is correct: it committed to 126. Under the \emph{completed truth}, it is a failure: it never
 finished. The two give the same verdict on every rollout that terminates; they differ only on correct rollouts that
-were truncated. We call the extra hacking counted by the completed truth \emph{delivery failures}.
+were truncated. We call the extra hacking counted by the completed truth \emph{delivery failures}. Which truth is appropriate
+depends on the task objective. If the objective is to solve the problem, the committed truth applies. If it is to
+deliver a finished answer, as our prompt requests, the completed truth applies, and a policy rewarded for never
+finishing is exploiting an under-specified reward. We do not choose between them; we report both and show that
+graders silently encode one or the other.
 
 For the four runs where the loophole was exploited, we estimate the hacking rate under each truth from the 150
 labels of this run set, by stratum, with posterior intervals; the method and its assumptions are in
@@ -259,7 +269,7 @@ with 95\% intervals under the committed and the completed truth (\cref{sec:preli
 \end{table}
 
 \subsection{Without truncation, graders agree}
-In the 14 runs without hacking, every grader except two reports a rate between $-0.09$ and $0.05$. The exceptions
+In the 14 runs without a detected increase, every grader except two reports a rate between $-0.09$ and $0.05$, and the absolute share of rewarded but rejected rollouts stays at most 0.12 throughout (\cref{tab:absolute}). The exceptions
 are verl's \texttt{math\_dapo}, which rejects most boxed answers in every run because it expects a different answer
 convention, and our strict grader on one honest run. That run shows the milder form of format drift
 (\cref{fig:dynamics}, left): its responses came to box several different values, and strict, which requires a single
@@ -355,6 +365,28 @@ The same truncation that hides correct answers from some graders lets the loopho
 looks like masquerade sits next to real hacking.
 \end{finding}
 
+\subsection{The grader changes which runs count as hacked}
+\label{sec:flip}
+The disagreement is not only a matter of magnitude. Our earlier study pre-registered a threshold, $\E \geq 0.10$,
+for calling a run exploited \citep{sangshetti2026formatdrift}. Applied here, it classifies Qwen3-0.6B seed 0 as
+exploited under TRL's default (0.16), TRL +cut (0.24), strict (0.15) and verl \texttt{math\_reward} (0.16), but not
+under Math-Verify (0.05), gpt-oss-120b (0.06), Qwen3-8B (0.07) or the hand labels (0.08, interval $-0.03$ to 0.19);
+strict additionally classifies one honest run as exploited. The other three exploited runs are classified alike by
+every grader. A study that compared training recipes by whether they produce hacking could therefore reach a
+different conclusion depending on its grader.
+
+The measured rate also depends on the generation limit, for some graders only. Cutting the saved rollouts at a
+shorter budget, without regenerating them, and re-applying the checker and the graders, moves TRL +cut on
+Qwen3-0.6B seed 0 from 0.24 at 1,536 tokens to 0.30 at 1,024 and 0.36 at 768, while Math-Verify stays at 0.05; on
+OLMo-2-1B seed 0, with few truncated rollouts, every grader moves by at most 0.02. This censoring analysis shows
+how a fixed set of responses is graded under different limits, not how a policy trained with a different limit
+would behave.
+
+\begin{finding}{Finding 4}
+The grader can change a qualitative conclusion: whether a run counts as exploited. Graders that reject truncated
+responses also make the measured rate depend on the generation limit.
+\end{finding}
+
 \section{Which grader to trust}
 \label{sec:accuracy}
 Against the committed truth, rule-based graders err by rejecting correct answers and judges by accepting
@@ -384,7 +416,7 @@ rates rest on 32 labelled wrong rollouts. All 18 graders: \cref{tab:agreement}.}
 \label{tab:accuracy}
 \end{table}
 
-\begin{finding}{Finding 4}
+\begin{finding}{Finding 5}
 Rule-based graders over-count hacking and judges lean towards under-counting it. Both are accurate on most
 rollouts; their errors concentrate where responses are truncated.
 \end{finding}
@@ -529,6 +561,21 @@ Checker & Model & Seed & Cut & strict & verl math & verl dapo & TRL & TRL +cut &
 late replies that hit the token limit. Committed-truth hand-label estimate with 95\% interval and the number of
 the run's own labels.}
 \label{tab:runs}
+\end{table}
+
+\section{Absolute levels}
+\begin{table}[H]
+\centering\scriptsize
+\begin{tabular}{l l c c c c c}
+\toprule
+Checker & Model & Seed & strict & TRL & Math-Verify & gpt-oss-120b \\
+\midrule
+\csname @@input\endcsname tables/absolute.tex
+\bottomrule
+\end{tabular}
+\caption{Share of all rollouts that are rewarded but rejected by each grader, at the early steps / at the late
+steps. The hacking rate $\E$ is the difference.}
+\label{tab:absolute}
 \end{table}
 
 \section{Estimating hacking rates from the hand labels}
