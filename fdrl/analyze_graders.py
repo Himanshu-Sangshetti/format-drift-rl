@@ -375,6 +375,84 @@ def extras(table, labels, rows, runs, E):
     return out
 
 
+def review_analyses(table, labels, rows, runs, E, hacked):
+    """Analyses requested in review: absolute levels, conclusions that flip with the grader, error
+    decomposition of each grader against the committed truth, and sensitivity to the generation limit."""
+    out = {}
+    # (a) absolute share of rollouts rewarded but rejected, early and late, not only the change
+    absl = {}
+    for run in runs:
+        absl[run] = {}
+        for g in ("strict", "TRL", "TRL +cut", "Math-Verify", REF):
+            for w, steps in (("early", EARLY), ("late", LATE)):
+                rs = [r for r in table[run] if r["step"] in steps]
+                absl[run].setdefault(g, {})[w] = sum(r["paid"] and not r["v"][g] for r in rs) / len(rs)
+    out["absolute"] = absl
+    # (b) which runs count as exploited under the pre-registered threshold of the earlier study (E >= 0.10)
+    thr = 0.10
+    flags = {g: sorted(r for r in runs if E[r][g] >= thr) for g in E[runs[0]] if isinstance(E[runs[0]][g], (int, float))}
+    out["exploited_at_0.10"] = flags
+    # (c) error decomposition against the committed truth, per grader, for the exploited runs:
+    #     E_g - E_C = rise in (rewarded, correct, rejected) - rise in (rewarded, wrong, accepted)
+    b3 = [r for r in rows if r["batch"] == 3]
+    dec = {}
+    for run in hacked:
+        pooled, own = collections.defaultdict(list), collections.defaultdict(list)
+        for r in b3:
+            pooled[r["group"]].append(r)
+            if labels[r["id"]]["run"] == run:
+                own[r["group"]].append(r)
+        lab = {s: (own[s] if len(own[s]) >= 5 else v) for s, v in pooled.items()}
+        alias = {"agree_right": "control_right", "agree_wrong": "control_wrong"}
+        counts = collections.Counter()
+        for r in table[run]:
+            if r["paid"]:
+                counts[("early" if r["step"] in EARLY else "late", stratum(run, r["step"], r["cut"], r["v"]))] += 1
+        dec[run] = {}
+        for g in ("strict", "TRL", "TRL +cut", "Math-Verify", "Qwen3-8B", REF):
+            def rise(fn):
+                tot = {}
+                for w, n_all in (("late", PER_STEP * len(LATE)), ("early", PER_STEP * len(EARLY))):
+                    s_ = 0.0
+                    for (ww, s), n in counts.items():
+                        if ww != w:
+                            continue
+                        items = lab.get(alias.get(s, s), [])
+                        if items:
+                            s_ += n * sum(fn(x) for x in items) / len(items)
+                    tot[w] = s_ / n_all
+                return tot["late"] - tot["early"]
+            fa = rise(lambda x: x["human"] and not x["v"][g])
+            miss = rise(lambda x: (not x["human"]) and x["v"][g])
+            dec[run][g] = {"false_alarm_rise": fa, "miss_rise": miss, "E_g": E[run][g],
+                           "E_committed": E[run]["hand labels"]}
+    out["decomposition"] = dec
+    # (d) sensitivity to the generation limit: cut every saved rollout of the exploited runs at a shorter
+    #     budget (a proportional character cut, rollouts already shorter are kept), re-apply the loophole
+    #     checker and the rule graders, and recompute E. Fixed-prefix censoring: nothing is regenerated.
+    sens = {}
+    for run in hacked:
+        s_all = samples(run)
+        sens[run] = {}
+        for budget in (768, 1024, 1536):
+            rs = []
+            for s in s_all:
+                if s["step"] not in EARLY + LATE:
+                    continue
+                n = s.get("n_tokens") or 1536
+                reply = s["reply"] if n <= budget else s["reply"][: int(len(s["reply"]) * budget / n)]
+                cut = n >= budget
+                g = str(s["gold"])
+                v = {k: RULE[k](reply, g) > 0.5 for k in ("TRL", "Math-Verify", "strict")}
+                v["TRL +cut"] = v["TRL"] and not cut
+                rs.append({"step": s["step"], "q": s["question"], "paid": g.strip() in reply, "v": v})
+            sens[run][budget] = {k: hack_rate(rs, k) for k in ("TRL", "TRL +cut", "Math-Verify", "strict")}
+            sens[run][budget]["truncated_late"] = sum(1 for s in s_all if s["step"] in LATE and (s.get("n_tokens") or 0) >= budget) / (PER_STEP * len(LATE))
+        print("sensitivity", run, flush=True)
+    out["generation_limit_sensitivity"] = sens
+    return out
+
+
 def human_labels():
     """Hand labels as given by the labeller, all three batches; truth = committed answer equals gold."""
     out = {}
@@ -503,6 +581,7 @@ def main():
            "agreement": agree, "agreement_by_run_set": by_set, "kendall_tau": tau, "predictions": preds,
            "trace_categories": trace_categories(rows), "n_labels": len(rows),
            "per_step": steps, "anatomy": anat, "hacked": hacked, "label_model": model, "extras": extras(table, labels, rows, runs, E),
+           "review": review_analyses(table, labels, rows, runs, E, hacked),
            "label_counts": {"right": sum(r["human"] for r in rows),
                             "wrong_answer": sum(r["answered"] and not r["human"] for r in rows),
                             "no_answer": sum(not r["answered"] for r in rows)}}
