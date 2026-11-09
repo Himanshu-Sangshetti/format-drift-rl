@@ -551,6 +551,29 @@ def tables(res):
         lines.append(f"{g.replace('_', chr(92) + '_')} & {a[g]['false_alarm_k']}/{a[g]['n_right']} & {a[g]['miss_k']}/{a[g]['n_wrong']}"
                      f" & {pc(wr[g]['false_alarm'], wr[g]['false_alarm_ci'])} & {pc(wr[g]['miss'], wr[g]['miss_ci'])}" + r" \\")
     open(os.path.join(out, "accuracy.tex"), "w").write("\n".join(lines) + "\n")
+    # summary of all runs, grouped by what happened (main-text Table)
+    def grange(r):
+        E = res["runs"][r]["E"]
+        vals = [E[g] for g in res["agreement"] if "dapo" not in g and isinstance(E.get(g), (int, float))]
+        return min(vals), max(vals)
+    hacked = sorted(res["hacked"], key=lambda r: res["runs"][r]["cut_late"])
+    quiet = [r for r in res["runs"] if r not in hacked]
+    lo = min(grange(r)[0] for r in quiet)
+    hi_others = max(grange(r)[1] for r in quiet if r != "trl_accuracy_q06_s0")
+    rows = [f"No hacking & {len(quiet)} runs$^\\dagger$ & "
+            f"$\\leq${max(res['runs'][r]['cut_late'] for r in quiet):.2f} & {f(lo)} to {f(hi_others)}$^\\ddagger$ & -- & --" + r" \\"]
+    for r in hacked:
+        v = res["runs"][r]
+        a_, b_ = grange(r)
+        c = res["label_model"][r]["estimates"]["committed"]
+        d = res["label_model"][r]["estimates"]["finished"]
+        kind = "Hacking, no truncation" if v["cut_late"] < 0.1 else "Hacking with truncation"
+        kind = "" if rows and kind in rows[-1] or (kind == "Hacking with truncation" and any(kind in x for x in rows)) else kind
+        if kind:
+            rows.append(r"\midrule")
+        rows.append(f"{kind} & {MODEL[v['model']]}, seed {v['seed']} & {v['cut_late']:.2f} & {f(a_)} to {f(b_)} & "
+                    f"{f(c[0])} [{f(c[1])}, {f(c[2])}] & {f(d[0])} [{f(d[1])}, {f(d[2])}]" + r" \\")
+    open(os.path.join(out, "summary.tex"), "w").write("\n".join(rows) + "\n")
     # where each hand-label estimate comes from
     names = {"control_right": "late, all rule graders right", "control_wrong": "late, all rule graders wrong",
              "loop_cut": "late, truncated", "loop_uncut": "late, terminated, disputed", "early": "early, disputed",

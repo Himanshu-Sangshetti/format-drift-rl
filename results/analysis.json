@@ -213,11 +213,11 @@
       "labels": 10,
       "wrong_share": 1.0
      },
-     "control_wrong": {
-      "answers": 54,
+     "early": {
+      "answers": 3,
       "source": "pooled",
-      "labels": 10,
-      "wrong_share": 1.0
+      "labels": 20,
+      "wrong_share": 0.0
      },
      "agree_right": {
       "answers": 27,
@@ -225,11 +225,11 @@
       "labels": 10,
       "wrong_share": 0.0
      },
-     "early": {
-      "answers": 3,
+     "control_wrong": {
+      "answers": 54,
       "source": "pooled",
-      "labels": 20,
-      "wrong_share": 0.0
+      "labels": 10,
+      "wrong_share": 1.0
      }
     },
     "hand labels: own labels": 5
@@ -393,11 +393,11 @@
       "labels": 10,
       "wrong_share": 1.0
      },
-     "control_wrong": {
-      "answers": 44,
+     "early": {
+      "answers": 2,
       "source": "pooled",
-      "labels": 10,
-      "wrong_share": 1.0
+      "labels": 20,
+      "wrong_share": 0.0
      },
      "agree_right": {
       "answers": 36,
@@ -405,11 +405,11 @@
       "labels": 10,
       "wrong_share": 0.0
      },
-     "early": {
-      "answers": 2,
+     "control_wrong": {
+      "answers": 44,
       "source": "pooled",
-      "labels": 20,
-      "wrong_share": 0.0
+      "labels": 10,
+      "wrong_share": 1.0
      }
     },
     "hand labels: own labels": 16
@@ -573,11 +573,11 @@
       "labels": 10,
       "wrong_share": 1.0
      },
-     "control_wrong": {
-      "answers": 3,
+     "early": {
+      "answers": 90,
       "source": "pooled",
-      "labels": 10,
-      "wrong_share": 1.0
+      "labels": 20,
+      "wrong_share": 0.0
      },
      "agree_right": {
       "answers": 8,
@@ -585,11 +585,11 @@
       "labels": 10,
       "wrong_share": 0.0
      },
-     "early": {
-      "answers": 90,
+     "control_wrong": {
+      "answers": 3,
       "source": "pooled",
-      "labels": 20,
-      "wrong_share": 0.0
+      "labels": 10,
+      "wrong_share": 1.0
      }
     },
     "hand labels: own labels": 13
@@ -735,6 +735,12 @@
       "labels": 19,
       "wrong_share": 0.42105263157894735
      },
+     "early": {
+      "answers": 69,
+      "source": "pooled",
+      "labels": 20,
+      "wrong_share": 0.0
+     },
      "agree_wrong": {
       "answers": 9,
       "source": "shares late agreeing labels",
@@ -745,12 +751,6 @@
       "answers": 15,
       "source": "shares late agreeing labels",
       "labels": 10,
-      "wrong_share": 0.0
-     },
-     "early": {
-      "answers": 69,
-      "source": "pooled",
-      "labels": 20,
       "wrong_share": 0.0
      }
     },
@@ -6767,8 +6767,8 @@
  "anatomy": {
   "substring_all_olmo1b_s0": {
    "right": 0.22265625,
-   "wrong answer": 0.1976562499999998,
    "no answer": 0.03046874999999997,
+   "wrong answer": 0.1976562499999998,
    "not paid": 0.53515625,
    "right, cut off": 0.014062500000000002,
    "called wrong: strict": 0.25390625,
@@ -6779,8 +6779,8 @@
   },
   "substring_all_olmo1b_s1": {
    "not paid": 0.328125,
-   "wrong answer": 0.21588541666666614,
    "no answer": 0.23138020833333378,
+   "wrong answer": 0.21588541666666614,
    "right": 0.1328125,
    "right, cut off": 0.091796875,
    "called wrong: strict": 0.51171875,
@@ -6792,9 +6792,9 @@
   "substring_all_q06_s0": {
    "right": 0.51953125,
    "not paid": 0.25390625,
-   "wrong answer": 0.07193080357142859,
-   "no answer": 0.03186383928571431,
    "right, cut off": 0.12276785714285728,
+   "no answer": 0.03186383928571431,
+   "wrong answer": 0.07193080357142859,
    "called wrong: strict": 0.20703125,
    "called wrong: TRL": 0.19921875,
    "called wrong: TRL +cut": 0.27734375,
