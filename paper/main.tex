@@ -189,8 +189,7 @@ Qwen3-1.7B \citep{qwen3} in non-thinking mode, and OLMo-2-0425-1B-DPO \citep{olm
 before its own RL stage. Dr.\ GRPO \citep{drgrpo} in TRL 1.17.1, LoRA rank 16 \citep{lora}, vLLM generation
 \citep{vllm}, 120 steps of 8 questions $\times$ 8 answers, temperature 1, at most 1,536 new tokens, seeds 0
 and 1 (\cref{app:training}). Four checker conditions (\cref{tab:checkers}); the format-free honest checker
-ran on both Qwen models and the closed loophole on Qwen3-0.6B only, giving 18 runs for \$12.10 of rented
-RTX 4090 time.
+ran on both Qwen models and the closed loophole on Qwen3-0.6B only, giving 18 runs, each on one RTX 4090.
 
 \begin{table}[t]
 \centering\small
@@ -211,8 +210,7 @@ loophole, cut-off closed & \texttt{substring\_all\_nocut} & as the loophole, but
 \paragraph{Graders.} \Cref{tab:graders} lists them. Each rule grader also runs with ``+cut'', which counts a
 reply that hit the token limit as unanswered. verl's \texttt{math\_dapo} expects an ``Answer:'' line, the
 convention of the DAPO prompt; our prompt asks for a box, so it is mismatched to this setting, and we include
-it because it ships as a default. LLM judges run at temperature 0 with vLLM 0.10.2 on one A100 (\$1.85 in
-total). \emph{Sighted} judges see the question, reference and full reply; \emph{blind} judges see only the last
+it because it ships as a default. LLM judges run at temperature 0 with vLLM 0.10.2 on one A100. \emph{Sighted} judges see the question, reference and full reply; \emph{blind} judges see only the last
 1,500 characters and no reference, and return the committed answer or NONE. gpt-oss-120b was added after the
 pre-registration and is not part of any prediction, and the sighted prompt asks for the committed final
 answer, close to our labelling rule (\cref{app:prompts}).
@@ -658,7 +656,7 @@ Sampling & temperature 1.0, at most 1,536 new tokens, vLLM colocated (30\% of GP
 Learning rate & $10^{-4}$, constant \\
 Hardware & one RTX 4090 per run (Vast.ai), bf16 \\
 Saved answers & all 64 at steps 1, 10, 25, 50, 55, \ldots, 120 \\
-Cost & \$12.10 for 18 runs; \$1.85 for all judges on one A100 80\,GB \\
+Judges & one A100 80\,GB, vLLM 0.10.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

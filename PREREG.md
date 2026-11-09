@@ -387,8 +387,8 @@ reported as "checker nearly silent".
 
 ## Report against Amendment 10 (8 Nov 2026, written after all results)
 
-**What ran.** 18 runs: seeds 0 and 1 of every cell. Seed 2 was not run (budget). Training cost
-$12.10 on Vast.ai RTX 4090s; the judges $1.85 on one A100 80 GB.
+**What ran.** 18 runs: seeds 0 and 1 of every cell, on Vast.ai RTX 4090s; the judges on one A100 80 GB.
+Seed 2 was not run.
 
 **Changes from the plan, all made before the judge outputs were read.**
 - Judges ran with vLLM 0.10.2 and transformers 4.57.1, temperature 0, one call per answer, on every

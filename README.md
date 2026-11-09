@@ -60,7 +60,7 @@ cd paper && tectonic main.tex             # -> paper/main.pdf
 python fdrl/judge.py build --out results/judge_inputs.jsonl
 bash fdrl/judge_job.sh                    # expects the repo at /workspace/fdr; see the script header
 
-# 3. re-train the 18 runs (RTX 4090s on Vast.ai, about $12 in total)
+# 3. re-train the 18 runs (one 24 GB GPU per run; we used RTX 4090s on Vast.ai)
 python fdrl/vast_runs.py setup
 python fdrl/vast_runs.py launch plans/v2_core.txt --gpus 9 --name v2
 python fdrl/vast_runs.py watch --name v2
