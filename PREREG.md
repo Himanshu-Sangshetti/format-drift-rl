@@ -4,6 +4,9 @@ Committed 31 Oct 2026, before any run of the `sd/` code that will be reported. T
 tests (3 steps, 128 tokens) only check that the code runs. The 0.6B pilot on Kaggle is
 exploratory and is reported as such.
 
+*Note (9 Nov 2026): dollar amounts in the budget rules of the amendments below were removed from the public
+version; the rules themselves are unchanged.*
+
 ## Question
 
 When RL with a defective checker learns a hack, is the hack selected from answers the starting
@@ -150,7 +153,7 @@ falls more than 0.15 below its first-20-step mean; the share of answers with a b
 0.5; mean answer length exceeds twice its first-20-step mean. There is no "must improve" test.
 The `substring_all` calibration runs on Kaggle are not used for the choice.
 
-**Run set for the preprint (budget about $30, Qwen3-0.6B only):** `substring_all`,
+**Run set for the preprint (within the budget, Qwen3-0.6B only):** `substring_all`,
 `substring_tail50`, `tail50_slope`, `tail50_density` with 5 seeds each; `strict` with 2 seeds;
 `judge_ref_prob` (Qwen3-4B judge) with 3 seeds; plus the base audit with the 4B judge and the
 reachability step. Deviations from Amendment 1, disclosed: 5 seeds instead of 8 for the causal
@@ -227,7 +230,7 @@ Decided with the PI after comparing the setup with the closest papers (SimHack: 
    is the smallest design whose permutation test can pass Holm-corrected p < 0.05); `substring_all`
    and `judge_ref_prob` 3 seeds; `strict` 2.
 5. **Steps.** One step count S for every run, fixed from the timing step before the core runs: the
-   largest S in {120, 200, 300} for which the whole run list fits in $38 at the measured cost per
+   largest S in {120, 200, 300} for which the whole run list fits in the budget at the measured cost per
    step. The learning rate stays 1e-4; the timing step's `strict` run at the final settings is
    checked against the Amendment 3b collapse rule before the core runs start, and if it collapses
    the core runs do not start.
@@ -249,7 +252,7 @@ cost per step is used for every reported run. These timing runs are not reported
 
 **Run list and cut order.** Full list (28 runs): `tail50_slope`, `substring_tail50`,
 `tail50_density` 5 seeds each; `substring_all` 3; `judge_ref_prob` 3; `strict` 2; `mbpp_base` 3;
-`mbpp_plus` 2. With C the measured cost of a 120-step run and $33.5 for runs:
+`mbpp_plus` 2. With C the measured cost of a 120-step run and the budget for runs:
 1. If the full list fits at 120 steps, the step count is the largest of 120, 200, 300 that fits.
 2. Otherwise steps stay at 120 and runs are cut in this order until the list fits: `strict` s1,
    `judge_ref_prob` s2, `mbpp_plus` s1, `substring_all` s2, `judge_ref_prob` s1, `mbpp_base` s2,
@@ -264,13 +267,12 @@ main runs launch, and are not changed afterwards.
 ## Amendment 8 (1 Nov 2026, 06:30 IST): the locked main run set, before any main run
 
 Timing on Modal (20 steps of `strict` at 1,536 tokens, micro-batch 8 with gradient checkpointing;
-micro-batch 16 without checkpointing ran out of memory on both GPUs): L40S 23.5 s per step
-(about $0.0127 per step), H100 11.9 s per step (about $0.0131). The L40S has the lower cost per
+micro-batch 16 without checkpointing ran out of memory on both GPUs): L40S 23.5 s per step, H100 11.9 s per step (not reported). The L40S has the lower cost per
 step and is used for every reported run. The kill-and-resume check passed (killed after
 checkpoint 9, resumed, steps 1-40 each logged once). All 378 MBPP+ reference solutions pass on the
 Modal image, so `EXCLUDE` stays {590} as fixed in Amendment 6.
 
-Applying Amendment 7 with the measured cost (full list at 120 steps: about $48; at 200: about $78):
+Applying Amendment 7 with the measured cost (the full list at 120 steps fits; at 200 it does not):
 steps stay at **120**, answers at **1,536 tokens**, and the run list is cut to the floor in the
 written order. **Locked run set (19 runs):** `tail50_slope`, `substring_tail50`, `tail50_density`
 seeds 0-3; `substring_all` seeds 0-1; `strict` seed 0; `judge_ref_prob` seed 0; `mbpp_base` seeds
@@ -280,9 +282,9 @@ Nothing in this set changes after launch.
 
 **Amendment 8a (1 Nov 2026, 06:40 IST, before launch):** at the PI's request the set is 20 runs:
 `mbpp_base` seed 2 is restored (the last cut before the triple's seed 4, and the cheapest run,
-about $0.74). Estimated cost of the run set: about $33.3. Nothing else changes.
+not reported). Nothing else changes.
 
-**Budget note (1 Nov 2026, 07:02 IST):** the PI set a hard cap of $43 total Modal spend for November. Measured speed in the main runs is about 25 s per step; projected total about $42.
+**Budget note (1 Nov 2026, 07:02 IST):** a hard spending cap was set for November. Measured speed in the main runs is about 25 s per step; the projected total fits within it.
 
 ## Amendment 9 (1 Nov 2026, 08:55 IST): a grader fix found after the main runs, disclosed
 
@@ -342,8 +344,7 @@ RL-trained on MATH prompts). Checkers:
   the token limit). Qwen models only.
 - `substring_all`: the loophole (the gold string anywhere).
 - `substring_all_nocut`: the loophole with the cut-off channel closed. Qwen3-0.6B only.
-Seeds 0 and 1 for every cell first, then seed 2 for the Qwen models, then seed 2 for OLMo, while the
-$15 budget lasts; any run not completed is reported as not run.
+Seeds 0 and 1 for every cell first, then seed 2 for the Qwen models, then seed 2 for OLMo, while the budget lasts; any run not completed is reported as not run.
 
 **Referees** (all applied to every saved answer; each also with the cut-off switch "+cut", which
 counts an answer that hit the token limit as no answer): strict, gold_label, TRL `accuracy_reward`,

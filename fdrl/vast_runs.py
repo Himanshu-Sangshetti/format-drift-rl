@@ -7,9 +7,9 @@ Needs: `pip install vastai`, ~/.vast_api_key, ~/.wandb_api_key, an ssh key regis
   python fdrl/vast_runs.py setup
   python fdrl/vast_runs.py offers                       # cheapest machines that pass the filter
   python fdrl/vast_runs.py launch plans/v2_timing.txt --gpus 1 --name timing
-  caffeinate -i python fdrl/vast_runs.py watch --name timing --budget 2
+  caffeinate -i python fdrl/vast_runs.py watch --name timing --budget <dollars>
   python fdrl/vast_runs.py launch plans/v2_runs.txt --gpus 9 --name v2
-  caffeinate -i python fdrl/vast_runs.py watch --name v2 --budget 18
+  caffeinate -i python fdrl/vast_runs.py watch --name v2 --budget <dollars>
   python fdrl/vast_runs.py destroy-all --name v2        # emergency stop for one launch
 
 Money and data guards:
