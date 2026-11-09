@@ -30,3 +30,7 @@ results/judged_v2/*.log
 results/judged_v2/_machine/pip.log
 results/timing_v2/
 fdrl/score_claude_judge.py
+
+# drafts and scratch builds
+paper/*_anonymous.*
+paper/scorer_*
